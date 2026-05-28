@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Cargar consumo | Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Cargar consumo</h1>
+    <p class="text-muted mb-0">Agrega productos y servicios al folio de la habitacion.</p>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card-resumen p-4 mb-4">
+            <h2 class="h5">Estancia</h2>
+            <p class="mb-1"><strong>Habitacion:</strong> {{ estancia.habitacion.numero }}</p>
+            <p class="mb-1"><strong>Huesped:</strong> {{ estancia.reserva.huesped.nombres }} {{ estancia.reserva.huesped.apellidos }}</p>
+            <p class="mb-1"><strong>Check-in:</strong> {{ estancia.fecha_checkin|date:"d/m/Y H:i" }}</p>
+            <p class="mb-1"><strong>Folio actual:</strong> S/ {{ folio.total }}</p>
+            <p class="mb-3"><strong>Saldo:</strong> S/ {{ folio.saldo_pendiente }}</p>
+            <a href="{% url 'pagar_folio' folio.id %}" class="btn btn-sm btn-outline-dark">Ir a caja</a>
+        </div>
+
+        <div class="card-resumen p-4">
+            <h2 class="h5">Nuevo cargo</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">{{ form.producto_servicio.label }}</label>
+                    {{ form.producto_servicio }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.cantidad.label }}</label>
+                    {{ form.cantidad }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.observacion.label }}</label>
+                    {{ form.observacion }}
+                </div>
+                <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'estancias_activas' %}" class="btn btn-outline-dark">Volver</a>
+                    <button type="submit" class="btn btn-dark">Cargar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card-resumen p-0">
+            <div class="p-3 border-bottom">
+                <h2 class="h5 mb-0">Cargos del folio</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Concepto</th>
+                            <th>Tipo</th>
+                            <th>Cant.</th>
+                            <th>Unitario</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cargo in cargos %}
+                        <tr>
+                            <td>{{ cargo.fecha|date:"d/m/Y H:i" }}</td>
+                            <td>{{ cargo.concepto }}</td>
+                            <td>{{ cargo.tipo }}</td>
+                            <td>{{ cargo.cantidad }}</td>
+                            <td>S/ {{ cargo.precio_unitario }}</td>
+                            <td>S/ {{ cargo.monto }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">Aun no hay consumos cargados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="5" class="text-end">Subtotal</th>
+                            <th>S/ {{ folio.subtotal }}</th>
+                        </tr>
+                        <tr>
+                            <th colspan="5" class="text-end">IGV</th>
+                            <th>S/ {{ folio.igv }}</th>
+                        </tr>
+                        <tr>
+                            <th colspan="5" class="text-end">Total</th>
+                            <th>S/ {{ folio.total }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

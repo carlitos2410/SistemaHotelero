@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Politica de cobro | Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="mx-auto" style="max-width: 760px;">
+    <div class="mb-4">
+        <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Politica de cobro</h1>
+        <p class="text-muted mb-0">Define como se recalcula el monto de habitacion al hacer check-out.</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card-resumen p-4">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">Politica de check-out</label>
+                {{ form.politica_checkout }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Penalidad por salida anticipada (%)</label>
+                {{ form.porcentaje_penalidad_salida_anticipada }}
+                <div class="form-text">Solo se usa cuando la politica es estadia real mas penalidad.</div>
+            </div>
+            <div class="form-check mb-4">
+                {{ form.activo }}
+                <label class="form-check-label">Configuracion activa</label>
+            </div>
+
+            <div class="card bg-light border-0 p-3 mb-4">
+                <strong>Como funciona</strong>
+                <p class="mb-1">Estadia real: cobra las noches usadas, minimo una noche.</p>
+                <p class="mb-1">Reserva completa: cobra todo lo reservado aunque el huesped salga antes.</p>
+                <p class="mb-0">Estadia real mas penalidad: cobra noches usadas y agrega penalidad sobre noches no usadas.</p>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-dark">Guardar politica</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

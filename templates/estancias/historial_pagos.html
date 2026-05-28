@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de pagos | Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Historial de pagos</h1>
+    <p class="text-muted mb-0">Consulta pagos registrados, comprobantes emitidos y estado de transacciones.</p>
+</div>
+
+<form method="get" class="card-resumen p-3 mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-2">{{ form.fecha_desde.label_tag }}{{ form.fecha_desde }}</div>
+        <div class="col-md-2">{{ form.fecha_hasta.label_tag }}{{ form.fecha_hasta }}</div>
+        <div class="col-md-2">{{ form.metodo_pago.label_tag }}{{ form.metodo_pago }}</div>
+        <div class="col-md-2">{{ form.tipo_comprobante.label_tag }}{{ form.tipo_comprobante }}</div>
+        <div class="col-md-2">{{ form.estado.label_tag }}{{ form.estado }}</div>
+        <div class="col-md-2"><button type="submit" class="btn btn-dark w-100">Filtrar</button></div>
+    </div>
+</form>
+
+<div class="card-resumen p-3 mb-3">
+    <strong>Total aprobado:</strong> S/ {{ total }}
+</div>
+
+<div class="card-resumen p-0">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Folio</th>
+                    <th>Cliente</th>
+                    <th>Metodo</th>
+                    <th>Operacion</th>
+                    <th>Comprobante</th>
+                    <th>Estado</th>
+                    <th>Monto</th>
+                    <th>PDF</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pago in pagos %}
+                <tr>
+                    <td>{{ pago.creado_en|date:"d/m/Y H:i" }}</td>
+                    <td>#{{ pago.folio.id }}</td>
+                    <td>{{ pago.folio.estancia.reserva.huesped.nombres }} {{ pago.folio.estancia.reserva.huesped.apellidos }}</td>
+                    <td>{{ pago.metodo_pago.nombre }}</td>
+                    <td>{{ pago.numero_operacion|default:"Efectivo" }}</td>
+                    <td>
+                        {% if pago.comprobante %}
+                            {{ pago.comprobante.get_tipo_display }} {{ pago.comprobante.correlativo }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ pago.estado }}</td>
+                    <td>S/ {{ pago.monto }}</td>
+                    <td>
+                        {% if pago.comprobante and pago.comprobante.estado == 'EMITIDO' %}
+                            <a href="{% url 'exportar_comprobante' pago.comprobante.id %}" class="btn btn-sm btn-outline-dark">PDF</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="text-center text-muted py-4">No hay pagos para los filtros seleccionados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
