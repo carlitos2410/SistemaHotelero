@@ -1,0 +1,380 @@
+{% extends 'base.html' %}
+
+{% block title %}Reservas | Sistema Hotelero{% endblock %}
+
+{% block content %}
+
+<style>
+    .page-header {
+        margin-bottom: 28px;
+    }
+
+    .page-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.3rem;
+        font-weight: 500;
+        color: var(--forest);
+        margin-bottom: 4px;
+        letter-spacing: 0.04em;
+    }
+
+    .page-subtitle {
+        color: #6c6c6c;
+        font-size: 0.95rem;
+        margin-bottom: 0;
+    }
+
+    .alert-custom {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--gold);
+        color: var(--forest);
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 18px;
+        box-shadow: 0 4px 14px rgba(30,45,36,0.06);
+    }
+
+    .reservas-card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 8px 28px rgba(30,45,36,0.08);
+        overflow: hidden;
+    }
+
+    .filtros-card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 6px 20px rgba(30,45,36,0.06);
+        padding: 18px;
+        margin-bottom: 18px;
+    }
+
+    .table-responsive-custom {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .table-reservas {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: collapse;
+    }
+
+    .table-reservas thead {
+        background-color: var(--forest);
+        color: var(--gold-light);
+    }
+
+    .table-reservas th {
+        padding: 16px 14px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        border: none;
+        white-space: nowrap;
+    }
+
+    .table-reservas td {
+        padding: 15px 14px;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(184,154,92,0.18);
+        font-size: 0.92rem;
+        color: var(--charcoal);
+        white-space: nowrap;
+    }
+
+    .table-reservas tbody tr:hover {
+        background-color: rgba(184,154,92,0.08);
+    }
+
+    .reserva-id {
+        font-weight: 600;
+        color: var(--forest);
+    }
+
+    .huesped-name {
+        font-weight: 500;
+        color: var(--forest);
+    }
+
+    .hotel-name {
+        color: var(--forest-mid);
+    }
+
+    .precio {
+        font-weight: 600;
+        color: var(--forest);
+    }
+
+    .badge-estado {
+        display: inline-block;
+        padding: 7px 13px;
+        border-radius: 50px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        min-width: 110px;
+        text-align: center;
+        letter-spacing: 0.03em;
+    }
+
+    .badge-pendiente {
+        background-color: rgba(184,154,92,0.16);
+        color: #8A6A24;
+        border: 1px solid rgba(184,154,92,0.35);
+    }
+
+    .badge-confirmada {
+        background-color: rgba(47,69,53,0.12);
+        color: #2F4535;
+        border: 1px solid rgba(47,69,53,0.28);
+    }
+
+    .badge-checkin {
+        background-color: rgba(42,92,130,0.12);
+        color: #245A7A;
+        border: 1px solid rgba(42,92,130,0.28);
+    }
+
+    .badge-checkout {
+        background-color: rgba(42,42,42,0.12);
+        color: #2A2A2A;
+        border: 1px solid rgba(42,42,42,0.28);
+    }
+
+    .badge-cancelada {
+        background-color: rgba(74,32,32,0.12);
+        color: #7A2525;
+        border: 1px solid rgba(74,32,32,0.28);
+    }
+
+    .badge-operacion {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 4px 9px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        background: rgba(42,92,130,0.1);
+        color: #245A7A;
+        border: 1px solid rgba(42,92,130,0.22);
+    }
+
+    .acciones {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+
+    .btn-accion {
+        border: none;
+        padding: 7px 12px;
+        border-radius: 5px;
+        font-size: 0.82rem;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .btn-checkin {
+        background-color: var(--forest);
+        color: var(--gold-light);
+        border: 1px solid var(--gold);
+    }
+
+    .btn-checkin:hover {
+        background-color: var(--gold);
+        color: var(--forest);
+        transform: translateY(-1px);
+    }
+
+    .btn-checkout {
+        background-color: #2A2A2A;
+        color: #fff;
+        border: 1px solid #2A2A2A;
+    }
+
+    .btn-checkout:hover {
+        background-color: #444;
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
+    .text-disabled {
+        color: #999;
+        font-size: 0.82rem;
+        font-style: italic;
+    }
+
+    .empty-row {
+        padding: 35px !important;
+        text-align: center;
+        color: #777;
+        font-style: italic;
+    }
+</style>
+
+<div class="page-header">
+    <h1 class="page-title">Listado de Reservas</h1>
+    <p class="page-subtitle">
+        Gestiona las reservas registradas, realiza check-in y finaliza estancias con check-out.
+    </p>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert-custom">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<form method="get" class="filtros-card">
+    <div class="row g-3 align-items-end">
+        <div class="col-lg-3">
+            <label class="form-label">Buscar</label>
+            {{ filtro_form.q }}
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label">Estado</label>
+            {{ filtro_form.estado }}
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label">Desde</label>
+            {{ filtro_form.fecha_desde }}
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label">Hasta</label>
+            {{ filtro_form.fecha_hasta }}
+        </div>
+        <div class="col-lg-2">
+            <label class="form-label">Tipo</label>
+            {{ filtro_form.estancia }}
+        </div>
+        <div class="col-lg-1 d-grid">
+            <button type="submit" class="btn btn-dark">Filtrar</button>
+        </div>
+    </div>
+</form>
+
+<div class="reservas-card">
+    <div class="table-responsive-custom">
+        <table class="table-reservas">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Huésped</th>
+                    <th>Hotel</th>
+                    <th>Habitación</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Adultos</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                    <th>Origen</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for reserva in reservas %}
+                <tr>
+                    <td>
+                        <span class="reserva-id">#{{ reserva.id }}</span>
+                    </td>
+
+                    <td>
+                        <span class="huesped-name">
+                            {{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="hotel-name">
+                            {{ reserva.hotel.nombre }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {% if reserva.habitacion %}
+                            Hab. {{ reserva.habitacion.numero }}
+                        {% else %}
+                            <span class="text-disabled">Sin asignar</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ reserva.fecha_entrada }}</td>
+
+                    <td>{{ reserva.fecha_salida }}</td>
+
+                    <td>{{ reserva.num_adultos }}</td>
+
+                    <td>
+                        {% if reserva.estado == 'PENDIENTE' %}
+                            <span class="badge-estado badge-pendiente">Pendiente</span>
+                        {% elif reserva.estado == 'CONFIRMADA' %}
+                            <span class="badge-estado badge-confirmada">Confirmada</span>
+                        {% elif reserva.estado == 'CHECKIN' %}
+                            <span class="badge-estado badge-checkin">Check-in</span>
+                        {% elif reserva.estado == 'CHECKOUT' %}
+                            <span class="badge-estado badge-checkout">Check-out</span>
+                        {% elif reserva.estado == 'CANCELADA' %}
+                            <span class="badge-estado badge-cancelada">Cancelada</span>
+                        {% else %}
+                            <span class="badge-estado">{{ reserva.estado }}</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                            <span class="precio">S/ {{ reserva.precio_total }}</span>
+                            {% if reserva.estancia.cargo_early_checkin > 0 %}
+                                <br><span class="badge-operacion">Early + S/ {{ reserva.estancia.cargo_early_checkin }}</span>
+                            {% endif %}
+                            {% if reserva.estancia.cargo_late_checkout > 0 %}
+                                <br><span class="badge-operacion">Late + S/ {{ reserva.estancia.cargo_late_checkout }}</span>
+                            {% endif %}
+                    </td>
+
+                    <td>
+                        {% if reserva.origen %}
+                            {{ reserva.origen }}
+                        {% else %}
+                            <span class="text-disabled">No registrado</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <div class="acciones">
+                            {% if reserva.estado == 'PENDIENTE' or reserva.estado == 'CONFIRMADA' %}
+                                <a href="{% url 'realizar_checkin' reserva.id %}" class="btn-accion btn-checkin">
+                                    Check-in
+                                </a>
+                            {% elif reserva.estado == 'CHECKIN' %}
+                                <a href="{% url 'realizar_checkout' reserva.id %}" class="btn-accion btn-checkout">
+                                    Check-out
+                                </a>
+                            {% else %}
+                                <span class="text-disabled">Sin acciones</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="empty-row">
+                        No hay reservas registradas.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

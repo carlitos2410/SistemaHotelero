@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Disponibilidad{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="fw-bold">Nueva Reserva</h1>
+    <p class="text-muted">Consulta habitaciones disponibles según rango de fechas.</p>
+</div>
+
+<form method="get" class="card card-resumen p-4 mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            {{ form.fecha_entrada.label_tag }}
+            {{ form.fecha_entrada }}
+        </div>
+        <div class="col-md-3">
+            {{ form.fecha_salida.label_tag }}
+            {{ form.fecha_salida }}
+        </div>
+        <div class="col-md-3">
+            {{ form.num_personas.label_tag }}
+            {{ form.num_personas }}
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-dark w-100">Buscar</button>
+        </div>
+    </div>
+</form>
+
+{% if fecha_entrada and fecha_salida %}
+    <div class="mb-4">
+        <h3 class="fw-bold">Habitaciones disponibles</h3>
+        <p class="text-muted">Desde {{ fecha_entrada }} hasta {{ fecha_salida }} para {{ num_personas }} persona(s)</p>
+    </div>
+
+    <div class="row g-3">
+        {% for habitacion in habitaciones %}
+        <div class="col-md-3">
+            <div class="card card-resumen p-3 h-100">
+                <h5>Hab. {{ habitacion.numero }}</h5>
+                <p class="mb-1"><strong>Tipo:</strong> {{ habitacion.tipo.nombre }}</p>
+                <p class="mb-1"><strong>Capacidad:</strong> {{ habitacion.tipo.capacidad }} persona(s)</p>
+                <p class="mb-1"><strong>Piso:</strong> {{ habitacion.piso }}</p>
+                <p class="mb-3"><strong>Precio base:</strong> S/ {{ habitacion.tipo.precio_base }}</p>
+
+                <a href="/reservas/nueva/?habitacion={{ habitacion.id }}&fecha_entrada={{ fecha_entrada|date:'Y-m-d' }}&fecha_salida={{ fecha_salida|date:'Y-m-d' }}&num_personas={{ num_personas }}"
+                     class="btn btn-success">
+                    Reservar
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <p>No hay habitaciones disponibles para ese rango de fechas.</p>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}
