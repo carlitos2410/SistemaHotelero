@@ -1,0 +1,16 @@
+env_hotel
+env
+venv
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+media/
+.git
+.gitignore
+.env
+*.log
+*.tmp
+*.bak
