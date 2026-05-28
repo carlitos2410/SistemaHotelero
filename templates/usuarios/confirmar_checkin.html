@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar check-in | Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="mx-auto" style="max-width: 880px;">
+    <div class="mb-4">
+        <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Confirmar check-in</h1>
+        <p class="text-muted mb-0">Revisa la condicion del ingreso antes de ocupar la habitacion.</p>
+    </div>
+
+    <div class="card-resumen p-4 mb-3">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <small class="text-muted text-uppercase">Huesped</small>
+                <div class="fs-5">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted text-uppercase">Habitacion</small>
+                <div class="fs-5">Hab. {{ reserva.habitacion.numero }}</div>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted text-uppercase">Reserva</small>
+                <div class="fs-5">#{{ reserva.id }}</div>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted text-uppercase">Personas</small>
+                <div class="fs-5">{{ reserva.num_adultos }} / {{ reserva.habitacion.tipo.capacidad }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-resumen p-4 mb-3">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Tipo de check-in</small>
+                <div class="fs-4">{{ evaluacion.tipo }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Hora oficial</small>
+                <div>{{ evaluacion.hora_limite|time:"H:i" }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Hora actual</small>
+                <div>{{ evaluacion.momento|date:"d/m/Y H:i" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-resumen p-4 mb-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Tarifa noche</small>
+                <div>S/ {{ evaluacion.tarifa_noche }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Recargo</small>
+                <div>{{ evaluacion.porcentaje }}%</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Cargo a folio</small>
+                <div class="fs-4">S/ {{ evaluacion.cargo }}</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="card-resumen p-4 mb-4">
+            <h2 class="h5">Acompanantes</h2>
+            <p class="text-muted small">El huesped principal ya cuenta como una persona. Registra aqui a las personas adicionales.</p>
+
+            {% if errores_acompanantes %}
+                <div class="alert alert-danger">
+                    {% for error in errores_acompanantes %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {{ formset_acompanantes.management_form }}
+            <div class="d-grid gap-3">
+                {% for acompanante_form in formset_acompanantes %}
+                    <div class="border rounded p-3 bg-light">
+                        <div class="row g-2">
+                            <div class="col-md-2">
+                                <label class="form-label">Tipo doc.</label>
+                                {{ acompanante_form.tipo_doc }}
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Documento</label>
+                                {{ acompanante_form.num_doc }}
+                                {{ acompanante_form.num_doc.errors }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Nombres</label>
+                                {{ acompanante_form.nombres }}
+                                {{ acompanante_form.nombres.errors }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Apellidos</label>
+                                {{ acompanante_form.apellidos }}
+                                {{ acompanante_form.apellidos.errors }}
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Parentesco</label>
+                                {{ acompanante_form.parentesco }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Nacionalidad</label>
+                                {{ acompanante_form.nacionalidad }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-end">
+            <a href="{% url 'lista_reservas' %}" class="btn btn-outline-dark">Cancelar</a>
+            <button type="submit" class="btn btn-dark">Confirmar check-in</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

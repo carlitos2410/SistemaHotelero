@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Check-out pendientes | Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Check-out</h1>
+    <p class="text-muted mb-0">Reservas con check-in activo y pendientes de salida.</p>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="card-resumen p-0">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Reserva</th>
+                    <th>Huesped</th>
+                    <th>Habitacion</th>
+                    <th>Check-in</th>
+                    <th>Salida prevista</th>
+                    <th>Folio</th>
+                    <th>Accion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reserva in reservas %}
+                <tr>
+                    <td>#{{ reserva.id }}</td>
+                    <td>{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</td>
+                    <td>{% if reserva.habitacion %}Hab. {{ reserva.habitacion.numero }}{% else %}Sin asignar{% endif %}</td>
+                    <td>{{ reserva.estancia.fecha_checkin|date:"d/m/Y H:i" }}</td>
+                    <td>{{ reserva.fecha_salida }}</td>
+                    <td>
+                        {% if reserva.estancia.folio %}
+                            S/ {{ reserva.estancia.folio.total }}
+                        {% else %}
+                            Pendiente
+                        {% endif %}
+                    </td>
+                    <td><a href="{% url 'realizar_checkout' reserva.id %}" class="btn btn-sm btn-dark">Realizar check-out</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">No hay salidas pendientes.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

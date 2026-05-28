@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar check-out | Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="mx-auto" style="max-width: 880px;">
+    <div class="mb-4">
+        <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Confirmar check-out</h1>
+        <p class="text-muted mb-0">Valida la salida, cargos adicionales y envio de habitacion a limpieza.</p>
+    </div>
+
+    <div class="card-resumen p-4 mb-3">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <small class="text-muted text-uppercase">Huesped</small>
+                <div class="fs-5">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted text-uppercase">Habitacion</small>
+                <div class="fs-5">Hab. {{ reserva.habitacion.numero }}</div>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted text-uppercase">Estancia</small>
+                <div class="fs-5">#{{ estancia.id }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-resumen p-4 mb-3">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Tipo de check-out</small>
+                <div class="fs-4">{{ evaluacion.tipo }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Hora oficial</small>
+                <div>{{ evaluacion.hora_limite|time:"H:i" }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Hora actual</small>
+                <div>{{ evaluacion.momento|date:"d/m/Y H:i" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-resumen p-4 mb-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Tarifa noche</small>
+                <div>S/ {{ evaluacion.tarifa_noche }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Recargo</small>
+                <div>{{ evaluacion.porcentaje }}%</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Cargo a folio</small>
+                <div class="fs-4">S/ {{ evaluacion.cargo }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-resumen p-4 mb-4">
+        <h2 class="h5">Calculo de estadia real</h2>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Politica</small>
+                <div>{{ evaluacion.politica_nombre }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Noches reservadas</small>
+                <div>{{ evaluacion.noches_reservadas }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Noches reales</small>
+                <div>{{ evaluacion.noches_reales }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Monto estadia real</small>
+                <div>S/ {{ evaluacion.monto_estadia_real }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Monto reserva completa</small>
+                <div>S/ {{ evaluacion.monto_reserva_completa }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Monto habitacion a cobrar</small>
+                <div class="fs-4">S/ {{ evaluacion.monto_habitacion }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Noches no usadas</small>
+                <div>{{ evaluacion.noches_no_usadas }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Penalidad salida anticipada</small>
+                <div>S/ {{ evaluacion.penalidad_salida_anticipada }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">% penalidad</small>
+                <div>{{ evaluacion.porcentaje_penalidad }}%</div>
+            </div>
+        </div>
+    </div>
+
+    {% if folio %}
+    <div class="card-resumen p-4 mb-4">
+        <h2 class="h5">Validacion de caja</h2>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Total folio</small>
+                <div>S/ {{ folio.total }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Pagado</small>
+                <div>S/ {{ folio.total_pagado }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Saldo pendiente</small>
+                <div class="fs-4">S/ {{ folio.saldo_pendiente }}</div>
+            </div>
+        </div>
+        {% if folio.saldo_pendiente > 0 %}
+            <div class="alert alert-warning mt-3 mb-0">
+                Para finalizar el check-out, primero se debe pagar el saldo pendiente en caja.
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <form method="post" class="d-flex gap-2 justify-content-end">
+        {% csrf_token %}
+        <a href="{% url 'lista_reservas' %}" class="btn btn-outline-dark">Cancelar</a>
+        {% if folio and folio.saldo_pendiente > 0 %}
+            <a href="{% url 'pagar_folio' folio.id %}" class="btn btn-warning">Ir a caja</a>
+        {% endif %}
+        <button type="submit" class="btn btn-dark">Confirmar check-out</button>
+    </form>
+</div>
+{% endblock %}

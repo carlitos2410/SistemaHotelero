@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Check-in | Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Check-in</h1>
+    <p class="text-muted mb-0">Atiende clientes con reserva o walk-in sin reserva previa.</p>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card-resumen p-4 h-100">
+            <h2 class="h5">¿Tiene reserva?</h2>
+            <p class="text-muted">Busca la reserva por nombre, documento o habitacion y realiza el check-in desde la lista.</p>
+            <a href="{% url 'lista_reservas' %}" class="btn btn-dark">Si, buscar reserva</a>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card-resumen p-4 h-100">
+            <h2 class="h5">Sin reserva</h2>
+            <p class="text-muted">Registra al cliente, selecciona una habitacion disponible y crea la estancia inmediatamente.</p>
+            <a href="#walkin" class="btn btn-outline-dark">No, hacer check-in directo</a>
+        </div>
+    </div>
+</div>
+
+<div id="walkin" class="row g-4">
+    <div class="col-lg-4">
+        <div class="card-resumen p-4">
+            <h2 class="h5">Habitaciones disponibles</h2>
+            <div class="d-grid gap-2">
+                {% for habitacion in habitaciones_disponibles %}
+                    <div class="border rounded p-2 bg-light">
+                        <strong>Hab. {{ habitacion.numero }}</strong><br>
+                        <span class="text-muted">{{ habitacion.tipo.nombre }} - Cap. {{ habitacion.tipo.capacidad }} - Piso {{ habitacion.piso }} - S/ {{ habitacion.tipo.precio_base }}</span>
+                    </div>
+                {% empty %}
+                    <p class="text-muted mb-0">No hay habitaciones disponibles.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card-resumen p-4">
+            <h2 class="h5">Check-in directo sin reserva</h2>
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Tipo doc.</label>
+                        {{ form.tipo_doc }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Documento</label>
+                        {{ form.num_doc }}
+                        {{ form.num_doc.errors }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nacionalidad</label>
+                        {{ form.nacionalidad }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nombres</label>
+                        {{ form.nombres }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Apellidos</label>
+                        {{ form.apellidos }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Telefono</label>
+                        {{ form.telefono }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Habitacion</label>
+                        {{ form.habitacion }}
+                        {{ form.habitacion.errors }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Salida</label>
+                        {{ form.fecha_salida }}
+                        {{ form.fecha_salida.errors }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Adultos</label>
+                        {{ form.num_adultos }}
+                        {{ form.num_adultos.errors }}
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Origen</label>
+                        {{ form.origen }}
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <h3 class="h6">Acompanantes</h3>
+                <p class="text-muted small">Registra los datos de las personas adicionales. El huesped principal ya cuenta como una persona.</p>
+
+                {% if errores_acompanantes %}
+                    <div class="alert alert-danger">
+                        {% for error in errores_acompanantes %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {{ formset_acompanantes.management_form }}
+                <div class="d-grid gap-3">
+                    {% for acompanante_form in formset_acompanantes %}
+                        <div class="border rounded p-3 bg-light">
+                            <div class="row g-2">
+                                <div class="col-md-2">
+                                    <label class="form-label">Tipo doc.</label>
+                                    {{ acompanante_form.tipo_doc }}
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Documento</label>
+                                    {{ acompanante_form.num_doc }}
+                                    {{ acompanante_form.num_doc.errors }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Nombres</label>
+                                    {{ acompanante_form.nombres }}
+                                    {{ acompanante_form.nombres.errors }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Apellidos</label>
+                                    {{ acompanante_form.apellidos }}
+                                    {{ acompanante_form.apellidos.errors }}
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Parentesco</label>
+                                    {{ acompanante_form.parentesco }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Nacionalidad</label>
+                                    {{ acompanante_form.nacionalidad }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn btn-dark">Registrar check-in</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
