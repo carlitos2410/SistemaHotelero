@@ -819,4 +819,73 @@ El sistema cuenta con:
 - Reportes gerenciales.
 - Calendario de ocupacion.
 - Limpieza y mantenimiento con observaciones.
+- API REST con autenticacion JWT.
+- Documentacion Swagger/OpenAPI.
+- Tests de disponibilidad, reservas y check-in/check-out.
 - Docker y PostgreSQL.
+
+## 13. API REST, JWT y Swagger
+
+Para cumplir con la capa de integracion solicitada en la rubrica, el sistema incluye una app llamada `api`. Esta app no reemplaza las pantallas web; funciona como una capa adicional para que otros clientes puedan consumir datos del sistema.
+
+### Archivos principales
+
+- `api/serializers.py`: convierte modelos Django a JSON y valida datos recibidos por la API.
+- `api/views.py`: contiene los endpoints REST para habitaciones, reservas, estancias, folios, housekeeping y reportes.
+- `api/urls.py`: registra las rutas `/api/`.
+- `api/tests.py`: contiene pruebas automaticas de reglas criticas.
+
+### Autenticacion JWT
+
+La API usa JSON Web Token. Primero se solicita un token con usuario y contrasena:
+
+```text
+POST /api/auth/token/
+```
+
+Luego el cliente consume endpoints enviando el token en la cabecera:
+
+```text
+Authorization: Bearer <token>
+```
+
+### Swagger
+
+La documentacion navegable de la API esta disponible en:
+
+```text
+/api/docs/
+```
+
+El esquema OpenAPI esta disponible en:
+
+```text
+/api/schema/
+```
+
+### Endpoints implementados
+
+- `GET /api/habitaciones/disponibles/`: consulta habitaciones disponibles por fechas, tipo y numero de personas.
+- `POST /api/reservas/`: crea reservas calculando tarifa vigente.
+- `POST /api/reservas/{id}/checkin/`: registra check-in y crea estancia y folio.
+- `POST /api/estancias/{id}/checkout/`: valida deuda, finaliza estancia y pasa habitacion a limpieza.
+- `POST /api/estancias/{id}/cargos/`: agrega cargos adicionales al folio.
+- `GET /api/estancias/{id}/folio/`: consulta folio con cargos y saldo.
+- `PATCH /api/habitaciones/{id}/housekeeping/`: actualiza estado de limpieza o mantenimiento.
+- `GET /api/reportes/ocupacion/`: devuelve ocupacion y revenue del dia.
+
+## 14. Pruebas automaticas
+
+El proyecto incluye pruebas en `api/tests.py` para validar reglas de negocio importantes:
+
+- Una habitacion con reserva solapada no aparece como disponible.
+- La reserva calcula precio usando tarifa vigente.
+- El check-in bloquea habitaciones en mantenimiento.
+- El check-out no se permite si el folio tiene deuda.
+- Al finalizar check-out, la habitacion pasa a limpieza.
+
+Comando para ejecutar las pruebas:
+
+```bash
+docker compose exec -T web python manage.py test api
+```
