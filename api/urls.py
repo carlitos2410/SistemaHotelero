@@ -4,6 +4,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from .views import (
+    BuscarHuespedAPIView,
+    CotizacionReservaAPIView,
     EstanciaViewSet,
     HabitacionViewSet,
     HabitacionesDisponiblesAPIView,
@@ -20,6 +22,8 @@ router.register('reservas', ReservaViewSet, basename='api-reservas')
 router.register('estancias', EstanciaViewSet, basename='api-estancias')
 
 urlpatterns = [
+    path('huespedes/buscar/', BuscarHuespedAPIView.as_view(), name='api-huesped-buscar'),
+    path('reservas/cotizar/', CotizacionReservaAPIView.as_view(), name='api-reserva-cotizar'),
     path('habitaciones/disponibles/', HabitacionesDisponiblesAPIView.as_view(), name='api-habitaciones-disponibles'),
     path('reportes/ocupacion/', reporte_ocupacion, name='api-reporte-ocupacion'),
     path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
