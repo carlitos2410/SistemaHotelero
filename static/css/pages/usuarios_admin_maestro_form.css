@@ -1,0 +1,40 @@
+﻿.master-form-shell {
+        max-width: 900px;
+    }
+
+    .master-form-card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--gold);
+        border-radius: 6px;
+        padding: 1.4rem;
+    }
+
+    .master-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .master-form-field.is-wide {
+        grid-column: 1 / -1;
+    }
+
+    .master-form-field label {
+        color: var(--forest);
+        font-weight: 400;
+        margin-bottom: 0.35rem;
+    }
+
+    .errorlist {
+        color: #8a1f2d;
+        margin: 0.4rem 0 0;
+        padding-left: 1rem;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .master-form-grid {
+            grid-template-columns: 1fr;
+        }
+    }

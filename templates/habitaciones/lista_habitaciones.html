@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Habitaciones | Sistema Hotelero{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/habitaciones_lista_habitaciones.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include 'habitaciones/_module_nav.html' %}
+
+
+<div class="page-header">
+    <h1 class="page-title">Módulo de Habitaciones</h1>
+    <p class="page-subtitle">
+        Consulta el inventario, tipo, capacidad, tarifa base y estado actual de cada habitación.
+    </p>
+    {% if puede_administrar_inventario %}
+    <div class="d-flex gap-2 flex-wrap mt-3">
+        <a href="{% url 'admin_maestro_crear' 'habitaciones' %}" class="btn btn-dark btn-sm">Crear habitación</a>
+        <a href="{% url 'admin_maestro_lista' 'tipos-habitacion' %}" class="btn btn-outline-dark btn-sm">Gestionar tipos</a>
+        <a href="{% url 'admin_maestro_lista' 'tarifas' %}" class="btn btn-outline-dark btn-sm">Gestionar tarifas</a>
+    </div>
+    {% endif %}
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert-custom">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="habitaciones-card">
+    <div class="table-responsive-custom">
+        <table class="table-habitaciones">
+            <thead>
+                <tr>
+                    <th>Hotel</th>
+                    <th>Número</th>
+                    <th>Piso</th>
+                    <th>Tipo</th>
+                    <th>Capacidad</th>
+                    <th>Precio base</th>
+                    <th>Estado</th>
+                    {% if puede_cambiar_estado %}<th>Acción</th>{% endif %}
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for habitacion in habitaciones %}
+                <tr>
+                    <td class="hotel-name">
+                        {{ habitacion.hotel.nombre }}
+                    </td>
+
+                    <td>
+                        <span class="habitacion-numero">
+                            Hab. {{ habitacion.numero }}
+                        </span>
+                    </td>
+
+                    <td>
+                        Piso {{ habitacion.piso }}
+                    </td>
+
+                    <td>
+                        {{ habitacion.tipo.nombre }}
+                    </td>
+
+                    <td>
+                        {{ habitacion.tipo.capacidad }} persona(s)
+                    </td>
+
+                    <td>
+                        <span class="precio">
+                            S/ {{ habitacion.tipo.precio_base }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {% if habitacion.estado == 'DISPONIBLE' %}
+                            <span class="badge-estado badge-disponible">Disponible</span>
+                        {% elif habitacion.estado == 'OCUPADA' %}
+                            <span class="badge-estado badge-ocupada">Ocupada</span>
+                        {% elif habitacion.estado == 'LIMPIEZA' %}
+                            <span class="badge-estado badge-limpieza">Limpieza</span>
+                        {% elif habitacion.estado == 'MANTENIMIENTO' %}
+                            <span class="badge-estado badge-mantenimiento">Mantenimiento</span>
+                        {% else %}
+                            <span class="badge-estado">
+                                {{ habitacion.get_estado_display }}
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    {% if puede_cambiar_estado %}<td>
+                        {% if puede_administrar_inventario %}
+                        <a href="{% url 'admin_maestro_editar' 'habitaciones' habitacion.id %}" class="btn btn-sm btn-outline-dark me-1">Editar datos</a>
+                        {% endif %}
+                        <a href="{% url 'cambiar_estado_habitacion' habitacion.id %}" class="btn-cambiar-estado">
+                            Cambiar estado
+                        </a>
+                    </td>{% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if puede_cambiar_estado %}8{% else %}7{% endif %}" class="empty-row">
+                        No hay habitaciones registradas.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ingresar | Sistema Hotelero{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/registration_login.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="login-page">
+    <section class="login-shell" aria-labelledby="login-title">
+        <aside class="login-brand-panel" aria-label="Sistema de gestión hotelera">
+            <div>
+                <span class="login-kicker">Gestión hotelera</span>
+                <h2 class="login-brand-title">Todo el hotel, en un solo lugar.</h2>
+                <p class="login-brand-copy">
+                    Controla reservas, estancias, habitaciones y folios desde una plataforma diseñada para la operación diaria.
+                </p>
+
+                <div class="login-features" aria-label="Funciones principales">
+                    <div class="login-feature">
+                        <span class="login-feature-icon" aria-hidden="true">✓</span>
+                        <span>Disponibilidad y ocupación centralizadas</span>
+                    </div>
+                    <div class="login-feature">
+                        <span class="login-feature-icon" aria-hidden="true">✓</span>
+                        <span>Procesos seguros según el rol del personal</span>
+                    </div>
+                    <div class="login-feature">
+                        <span class="login-feature-icon" aria-hidden="true">✓</span>
+                        <span>Información operativa siempre a la vista</span>
+                    </div>
+                </div>
+            </div>
+            <p class="login-brand-footer">Sistema interno de administración hotelera</p>
+        </aside>
+
+        <div class="login-form-panel">
+            <div>
+                <h1 id="login-title" class="login-form-title">Bienvenido</h1>
+                <p class="login-form-copy">Ingresa tus credenciales para acceder a tu espacio de trabajo.</p>
+
+                {% if form.errors %}
+                    <div class="login-alert" role="alert">
+                        <strong aria-hidden="true">!</strong>
+                        <span>El usuario o la contraseña no son correctos. Verifica tus datos e inténtalo nuevamente.</span>
+                    </div>
+                {% endif %}
+
+                <form method="post" id="login-form">
+                    {% csrf_token %}
+                    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+                    <div class="login-field">
+                        <label for="{{ form.username.id_for_label }}" class="form-label login-label">Usuario</label>
+                        <div class="login-input-wrap">
+                            <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <path d="M20 21a8 8 0 0 0-16 0"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <input
+                                type="text"
+                                name="{{ form.username.html_name }}"
+                                id="{{ form.username.id_for_label }}"
+                                value="{{ form.username.value|default:'' }}"
+                                class="form-control login-control"
+                                autocomplete="username"
+                                placeholder="Escribe tu usuario"
+                                maxlength="150"
+                                required
+                                autofocus
+                            >
+                        </div>
+                    </div>
+
+                    <div class="login-field">
+                        <label for="{{ form.password.id_for_label }}" class="form-label login-label">Contraseña</label>
+                        <div class="login-input-wrap">
+                            <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <rect x="4" y="10" width="16" height="11" rx="2"></rect>
+                                <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+                            </svg>
+                            <input
+                                type="password"
+                                name="{{ form.password.html_name }}"
+                                id="{{ form.password.id_for_label }}"
+                                class="form-control login-control password-control"
+                                autocomplete="current-password"
+                                placeholder="Escribe tu contraseña"
+                                required
+                            >
+                            <button
+                                type="button"
+                                id="password-toggle"
+                                class="password-toggle"
+                                aria-controls="{{ form.password.id_for_label }}"
+                                aria-label="Mostrar contraseña"
+                                aria-pressed="false"
+                            >Ver</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="login-submit" class="btn login-submit w-100">
+                        <span class="login-submit-text">Ingresar al sistema</span>
+                    </button>
+                </form>
+
+                <p class="login-security-note">
+                    <span aria-hidden="true">●</span>
+                    Acceso exclusivo para personal autorizado
+                </p>
+            </div>
+        </div>
+    </section>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/pages/login.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,200 @@
+﻿.calendar-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 1.4rem;
+        flex-wrap: wrap;
+    }
+
+    .calendar-title {
+        font-family: 'Cormorant Garamond', serif;
+        color: var(--forest);
+        font-size: 2.2rem;
+        margin: 0;
+    }
+
+    .calendar-controls,
+    .calendar-summary {
+        display: flex;
+        gap: 0.7rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .summary-pill {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--gold);
+        border-radius: 6px;
+        padding: 0.7rem 0.9rem;
+        min-width: 130px;
+    }
+
+    .summary-pill small {
+        color: #777;
+        display: block;
+        text-transform: uppercase;
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
+    }
+
+    .summary-pill strong {
+        color: var(--forest);
+        font-size: 1.2rem;
+    }
+
+    .calendar-filter {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .calendar-wrap {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: auto;
+        max-height: 72vh;
+    }
+
+    .occupancy-table {
+        min-width: 1180px;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .occupancy-table th,
+    .occupancy-table td {
+        border-bottom: 1px solid rgba(184,154,92,0.18);
+        border-right: 1px solid rgba(184,154,92,0.14);
+        vertical-align: middle;
+    }
+
+    .occupancy-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: var(--forest);
+        color: var(--gold-light);
+        font-weight: 400;
+        text-align: center;
+        padding: 0.7rem 0.45rem;
+        font-size: 0.82rem;
+    }
+
+    .room-col {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: #fff;
+        min-width: 210px;
+        padding: 0.85rem;
+    }
+
+    thead .room-col {
+        z-index: 4;
+        background: var(--forest);
+        color: var(--gold-light);
+    }
+
+    .room-number {
+        font-weight: 600;
+        color: var(--forest);
+    }
+
+    .room-meta {
+        color: #777;
+        font-size: 0.78rem;
+    }
+
+    .day-cell {
+        min-width: 92px;
+        height: 62px;
+        text-align: center;
+        padding: 0.25rem;
+    }
+
+    .today-column {
+        box-shadow: inset 2px 0 #c9a84c, inset -2px 0 #c9a84c;
+    }
+
+    thead .today-column {
+        background: #314b3a;
+        color: #fff;
+    }
+
+    .state-box {
+        height: 100%;
+        border-radius: 5px;
+        padding: 0.32rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        line-height: 1.1;
+        font-size: 0.72rem;
+        border: 1px solid transparent;
+    }
+
+    .state-DISPONIBLE {
+        background: #edf7ef;
+        color: #245333;
+        border-color: #cde5d1;
+    }
+
+    .state-RESERVADA {
+        background: #fff6dd;
+        color: #785812;
+        border-color: #ead08f;
+    }
+
+    .state-OCUPADA {
+        background: #f7dedf;
+        color: #742b2d;
+        border-color: #e7b7ba;
+    }
+
+    .state-LIMPIEZA {
+        background: #e3f1ff;
+        color: #24527a;
+        border-color: #b9d8f4;
+    }
+
+    .state-MANTENIMIENTO {
+        background: #e9e9e9;
+        color: #333;
+        border-color: #c8c8c8;
+    }
+
+    .state-detail {
+        font-size: 0.65rem;
+        opacity: 0.82;
+        margin-top: 0.15rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .legend {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+    }
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: #666;
+        font-size: 0.85rem;
+    }
+
+    .legend-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid rgba(0,0,0,0.12);
+    }

@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Recepcion - Sistema Hotelero{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/usuarios_inicio.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-wrap">
+
+  <div class="dash-header">
+    <h1>Recepcion</h1>
+    <p>Reservas, disponibilidad y estado operativo de habitaciones.</p>
+    <a href="{% url 'calendario_ocupacion' %}" class="btn btn-sm btn-outline-dark mt-3">Ver calendario mensual</a>
+  </div>
+
+  <!-- STAT CARDS (sin Hoteles) -->
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="stat-label">Habitaciones</div>
+      <div class="stat-number">{{ total_habitaciones }}</div>
+      <span class="stat-icon">🛏</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pendientes check-in</div>
+      <div class="stat-number">{{ total_reservas }}</div>
+      <span class="stat-icon">📋</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Huéspedes</div>
+      <div class="stat-number">{{ total_huespedes }}</div>
+      <span class="stat-icon">👤</span>
+    </div>
+  </div>
+
+  <div class="section-head justify-content-between align-items-center">
+    <div>
+      <h3>Panel de reservas del día</h3>
+      <p>{{ panel_reservas.fecha|date:"d/m/Y" }} · {{ panel_reservas.total_alertas }} alerta(s) operativa(s)</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'alertas_operativas' %}" class="btn btn-sm btn-outline-danger">Ver todas las alertas</a>
+      <a href="{% url 'checkin_pendientes' %}" class="btn btn-sm btn-outline-dark">Todos los check-in</a>
+      <a href="{% url 'checkout_pendientes' %}" class="btn btn-sm btn-outline-dark">Prórrogas y checkout</a>
+    </div>
+  </div>
+
+  {% if panel_reservas.garantias_por_vencer %}
+  <div class="alert alert-warning border-warning mb-3">
+    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-2">
+      <strong>Garantías próximas a vencer</strong>
+      <span class="badge text-bg-warning">{{ panel_reservas.garantias_por_vencer|length }}</span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      {% for reserva in panel_reservas.garantias_por_vencer %}
+      <a href="{% url 'pagar_reserva' reserva.id %}" class="btn btn-sm btn-light border">
+        #{{ reserva.id }} · {{ reserva.huesped.nombres }} · vence {{ reserva.fecha_limite_pago|date:"H:i" }} · falta S/ {{ reserva.saldo_adelanto }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="daily-panel-grid">
+    <section class="daily-column">
+      <div class="daily-column-head"><h4>Llegadas</h4><span class="daily-count">{{ panel_reservas.total_llegadas }}</span></div>
+      <div class="daily-list">
+        {% for reserva in panel_reservas.llegadas_hoy %}
+        <article class="daily-item">
+          <div class="daily-name">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+          <div class="daily-meta">Hab. {{ reserva.habitacion.numero|default:"Sin asignar" }} · Entrada hoy · Reserva #{{ reserva.id }}</div>
+          <div class="daily-actions">
+            {% if reserva.estado == 'PENDIENTE' %}<a href="{% url 'pagar_reserva' reserva.id %}" class="btn btn-sm btn-warning">Completar adelanto</a>
+            {% else %}<a href="{% url 'realizar_checkin' reserva.id %}" class="btn btn-sm btn-dark">Check-in</a>{% endif %}
+          </div>
+        </article>
+        {% endfor %}
+        {% for reserva in panel_reservas.llegadas_atrasadas %}
+        <article class="daily-item alerta">
+          <div class="daily-name">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+          <div class="daily-meta">Llegada tardía desde {{ reserva.fecha_entrada|date:"d/m" }} · Hab. {{ reserva.habitacion.numero|default:"Sin asignar" }}</div>
+          <div class="daily-actions">
+            {% if reserva.estado == 'PENDIENTE' %}<a href="{% url 'pagar_reserva' reserva.id %}" class="btn btn-sm btn-warning">Completar adelanto</a>
+            {% else %}<a href="{% url 'realizar_checkin' reserva.id %}" class="btn btn-sm btn-warning">Registrar llegada</a>{% endif %}
+          </div>
+        </article>
+        {% endfor %}
+        {% for reserva in panel_reservas.no_show_pendientes %}
+        <article class="daily-item vencida">
+          <div class="daily-name">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+          <div class="daily-meta">Reserva vencida el {{ reserva.fecha_salida|date:"d/m" }} · #{{ reserva.id }}</div>
+          <form method="post" action="{% url 'marcar_no_show' reserva.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">Marcar no-show</button></form>
+        </article>
+        {% endfor %}
+        {% if not panel_reservas.llegadas_hoy and not panel_reservas.llegadas_atrasadas and not panel_reservas.no_show_pendientes %}<div class="daily-empty">No hay llegadas pendientes.</div>{% endif %}
+      </div>
+    </section>
+
+    <section class="daily-column">
+      <div class="daily-column-head"><h4>En casa</h4><span class="daily-count">{{ panel_reservas.total_en_casa }}</span></div>
+      <div class="daily-list">
+        {% for reserva in panel_reservas.en_casa %}
+        <article class="daily-item {% if reserva.estado_operativo == 'SALIDA_VENCIDA' %}vencida{% elif reserva.estado_operativo == 'SALIDA_HOY' %}alerta{% endif %}">
+          <div class="daily-name">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+          <div class="daily-meta">Hab. {{ reserva.habitacion.numero }} · Salida vigente {{ reserva.salida_vigente|date:"d/m/Y" }}</div>
+          <div class="daily-actions">
+            <a href="{% url 'cargar_consumo' reserva.estancia.id %}" class="btn btn-sm btn-outline-dark">Agregar cargo</a>
+            {% if reserva.estancia.folio %}<a href="{% url 'pagar_folio' reserva.estancia.folio.id %}" class="btn btn-sm btn-outline-success">Folio</a>{% endif %}
+            <a href="{% url 'realizar_checkout' reserva.id %}" class="btn btn-sm btn-dark">Checkout</a>
+          </div>
+        </article>
+        {% empty %}<div class="daily-empty">No hay huéspedes alojados.</div>{% endfor %}
+      </div>
+    </section>
+
+    <section class="daily-column">
+      <div class="daily-column-head"><h4>Salidas</h4><span class="daily-count">{{ panel_reservas.total_salidas }}</span></div>
+      <div class="daily-list">
+        {% for reserva in panel_reservas.salidas_vencidas %}
+        <article class="daily-item vencida">
+          <div class="daily-name">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+          <div class="daily-meta">Salida vencida {{ reserva.salida_vigente|date:"d/m/Y" }} · Hab. {{ reserva.habitacion.numero }}</div>
+          <div class="daily-actions">
+            {% if reserva.estancia.folio %}<a href="{% url 'pagar_folio' reserva.estancia.folio.id %}" class="btn btn-sm btn-outline-danger">Revisar folio</a>{% endif %}
+            <a href="{% url 'realizar_checkout' reserva.id %}" class="btn btn-sm btn-danger">Finalizar salida</a>
+          </div>
+        </article>
+        {% endfor %}
+        {% for reserva in panel_reservas.salidas_hoy %}
+        <article class="daily-item alerta">
+          <div class="daily-name">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+          <div class="daily-meta">Salida prevista hoy · Hab. {{ reserva.habitacion.numero }}</div>
+          <div class="daily-actions">
+            {% if reserva.estancia.folio %}<a href="{% url 'pagar_folio' reserva.estancia.folio.id %}" class="btn btn-sm btn-outline-dark">Folio</a>{% endif %}
+            <a href="{% url 'realizar_checkout' reserva.id %}" class="btn btn-sm btn-dark">Checkout</a>
+          </div>
+        </article>
+        {% endfor %}
+        {% if not panel_reservas.salidas_vencidas and not panel_reservas.salidas_hoy %}<div class="daily-empty">No hay salidas previstas ni vencidas.</div>{% endif %}
+      </div>
+    </section>
+  </div>
+
+  <!-- PLANO DEL HOTEL INTEGRADO -->
+  <div class="section-head justify-content-between align-items-center">
+    <div>
+      <h3>Plano del Hotel</h3>
+      <p id="dashboard-map-status">Actualización automática cada 15 segundos</p>
+    </div>
+    <a href="{% url 'estado_habitaciones' %}" class="btn btn-sm btn-outline-success">Ver plano completo e historial</a>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:var(--disponible)"></span>Disponible</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--reservada)"></span>Reservada</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--ocupada)"></span>Ocupada</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--limpieza)"></span>Limpieza</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--mantenimiento)"></span>Mantenimiento</span>
+  </div>
+
+  <div class="row g-2 mb-3">
+    <div class="col-sm-6 col-md-3">
+      <label for="dashboard-filter-piso" class="form-label small">Piso</label>
+      <select id="dashboard-filter-piso" class="form-select form-select-sm">
+        <option value="">Todos</option>
+        {% for piso_numero in pisos_habitaciones %}<option value="{{ piso_numero }}">Piso {{ piso_numero }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <label for="dashboard-filter-estado" class="form-label small">Estado</label>
+      <select id="dashboard-filter-estado" class="form-select form-select-sm">
+        <option value="">Todos</option>
+        <option value="DISPONIBLE">Disponible</option><option value="RESERVADA">Reservada</option>
+        <option value="OCUPADA">Ocupada</option><option value="LIMPIEZA">Limpieza</option>
+        <option value="MANTENIMIENTO">Mantenimiento</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="habitaciones-grid" id="dashboard-room-grid"
+       data-source="{% url 'estado_habitaciones_datos' %}"
+       data-full-map-url="{% url 'estado_habitaciones' %}">
+    {% for habitacion in habitaciones %}
+      <button type="button" class="hab-card
+        {% if habitacion.estado == 'DISPONIBLE' %}disponible
+        {% elif habitacion.estado == 'OCUPADA' %}ocupada
+        {% elif habitacion.estado == 'LIMPIEZA' %}limpieza
+        {% elif habitacion.estado == 'MANTENIMIENTO' %}mantenimiento
+        {% endif %}
+      " data-piso="{{ habitacion.piso }}" data-estado="{{ habitacion.estado }}" title="Abrir plano completo">
+        <div class="hab-numero">Hab. {{ habitacion.numero }}</div>
+        <div class="hab-meta">
+          {{ habitacion.tipo.nombre }}<br>
+          Piso {{ habitacion.piso }}
+        </div>
+        <span class="hab-badge">{{ habitacion.estado }}</span>
+      </button>
+    {% empty %}
+      <p style="color:var(--muted);grid-column:1/-1;">No hay habitaciones registradas.</p>
+    {% endfor %}
+  </div>
+
+  <!-- RESERVAS RECIENTES -->
+  <div class="table-card">
+    <div class="table-card-head">
+      <h3>Reservas recientes</h3>
+      <small>Últimas reservas del sistema</small>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="dashboard-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Huésped</th>
+            <th>Hotel</th>
+            <th>Habitación</th>
+            <th>Entrada</th>
+            <th>Salida</th>
+            <th>Estado</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for reserva in reservas %}
+          <tr>
+            <td style="color:var(--muted);font-size:.82rem;">{{ reserva.id }}</td>
+            <td style="font-weight:500;">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</td>
+            <td>{{ reserva.hotel.nombre }}</td>
+            <td>
+              {% if reserva.habitacion %}
+                {{ reserva.habitacion.numero }}
+              {% else %}
+                <span class="sin-asignar">Sin asignar</span>
+              {% endif %}
+            </td>
+            <td>{{ reserva.fecha_entrada }}</td>
+            <td>{{ reserva.fecha_salida }}</td>
+            <td>
+              {% with estado=reserva.estado|lower %}
+                <span class="estado-pill
+                  {% if 'confirm' in estado %}pill-confirmada
+                  {% elif 'pendiente' in estado %}pill-pendiente
+                  {% elif 'cancel' in estado %}pill-cancelada
+                  {% elif 'check-in' in estado or 'checkin' in estado %}pill-checkin
+                  {% elif 'check-out' in estado or 'checkout' in estado %}pill-checkout
+                  {% else %}pill-default
+                  {% endif %}
+                ">{{ reserva.estado }}</span>
+              {% endwith %}
+            </td>
+            <td class="precio">S/ {{ reserva.precio_total }}</td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row">
+            <td colspan="8">No hay reservas registradas.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/pages/inicio.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,144 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap');
+    .plano-page {
+        --map-ink: #1a1714;
+        --map-muted: #8a8279;
+        --map-border: #ede9e1;
+        --map-shadow: 0 2px 16px rgba(26, 23, 20, .07);
+        font-family: 'DM Sans', sans-serif;
+        color: var(--map-ink);
+    }
+    .plano-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .plano-title {
+        font-family: 'Playfair Display', serif;
+        color: var(--map-ink);
+        margin-bottom: .25rem;
+    }
+    .status-live {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #42604b;
+        font-size: .85rem;
+    }
+    .status-live::before {
+        content: '';
+        width: .55rem;
+        height: .55rem;
+        border-radius: 50%;
+        background: #198754;
+        box-shadow: 0 0 0 .2rem rgba(25, 135, 84, .13);
+    }
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(120px, 1fr));
+        gap: .85rem;
+        margin-bottom: 1.25rem;
+    }
+    .summary-card {
+        background: #fff;
+        border: 1.5px solid var(--map-border);
+        border-radius: 14px;
+        padding: .9rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        box-shadow: var(--map-shadow);
+    }
+    .summary-dot, .legend-dot {
+        width: .8rem;
+        height: .8rem;
+        border-radius: 50%;
+        flex: 0 0 auto;
+    }
+    .summary-value { font-size: 1.55rem; font-weight: 500; line-height: 1; }
+    .summary-label { font-size: .78rem; color: #68716b; text-transform: uppercase; letter-spacing: .04em; }
+    .filters-panel {
+        background: #fff;
+        border: 1.5px solid var(--map-border);
+        border-radius: 14px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: var(--map-shadow);
+    }
+    .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .7rem 1.2rem;
+        margin-bottom: 1rem;
+        color: #566058;
+        font-size: .85rem;
+    }
+    .legend-item { display: inline-flex; align-items: center; gap: .4rem; }
+    .habitacion-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+        gap: 1rem;
+    }
+    .room-cell {
+        position: relative;
+        border: 1.5px solid transparent;
+        border-radius: 12px;
+        padding: 1.1rem 1.2rem;
+        min-height: 145px;
+        text-align: left;
+        color: var(--map-ink);
+        box-shadow: var(--map-shadow);
+        transition: transform .18s ease, box-shadow .18s ease;
+        overflow: hidden;
+    }
+    .room-cell:hover, .room-cell:focus-visible {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 28px rgba(26, 23, 20, .12);
+    }
+    .room-disponible { background: #d8f3dc; border-color: #b7e4c7; }
+    .room-reservada { background: #e0f0f8; border-color: #b8d9e9; }
+    .room-ocupada { background: #ffe5e5; border-color: #ffbdbd; }
+    .room-limpieza { background: #fff3cd; border-color: #fde68a; }
+    .room-mantenimiento { background: #e9ecef; border-color: #ced4da; }
+    .room-number { font-family: 'Playfair Display', serif; font-size: 1.35rem; font-weight: 700; }
+    .room-type { font-size: .85rem; color: #554f49; margin-top: .25rem; }
+    .room-meta { font-size: .78rem; color: var(--map-muted); margin-top: .8rem; }
+    .room-state {
+        display: inline-block;
+        margin-top: .55rem;
+        padding: .2rem .55rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        color: #fff;
+    }
+    .room-disponible .room-state { background: #2d6a4f; }
+    .room-reservada .room-state { background: #246b91; }
+    .room-ocupada .room-state { background: #b5191b; }
+    .room-limpieza .room-state { background: #d39e00; color: #241d00; }
+    .room-mantenimiento .room-state { background: #6c757d; }
+    .empty-state {
+        grid-column: 1 / -1;
+        background: #fff;
+        border: 1px dashed #b9c0bb;
+        border-radius: .7rem;
+        padding: 2.5rem;
+        text-align: center;
+        color: #6c757d;
+    }
+    .dot-disponible { background: #198754; }
+    .dot-reservada { background: #246b91; }
+    .dot-ocupada { background: #b02a37; }
+    .dot-limpieza { background: #d39e00; }
+    .dot-mantenimiento { background: #6c757d; }
+    @media (max-width: 991.98px) {
+        .summary-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 575.98px) {
+        .plano-header { flex-direction: column; }
+        .summary-grid { grid-template-columns: repeat(2, 1fr); }
+        .habitacion-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+        .room-cell { min-height: 145px; padding: .85rem; }
+    }

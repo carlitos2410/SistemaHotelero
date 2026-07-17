@@ -5,7 +5,7 @@
 {% block content %}
 <div class="mb-4">
     <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Historial de pagos</h1>
-    <p class="text-muted mb-0">Consulta pagos registrados, comprobantes emitidos y estado de transacciones.</p>
+    <p class="text-muted mb-0">Consulta pagos, devoluciones, comprobantes y el ingreso neto conservado por el hotel.</p>
 </div>
 
 <form method="get" class="card-resumen p-3 mb-4">
@@ -20,7 +20,7 @@
 </form>
 
 <div class="card-resumen p-3 mb-3">
-    <strong>Total aprobado:</strong> S/ {{ total }}
+    <strong>Total neto aprobado:</strong> S/ {{ total }}
 </div>
 
 <div class="card-resumen p-0">
@@ -35,7 +35,9 @@
                     <th>Operacion</th>
                     <th>Comprobante</th>
                     <th>Estado</th>
-                    <th>Monto</th>
+                    <th>Pagado</th>
+                    <th>Devuelto</th>
+                    <th>Neto</th>
                     <th>PDF</th>
                 </tr>
             </thead>
@@ -43,8 +45,11 @@
                 {% for pago in pagos %}
                 <tr>
                     <td>{{ pago.creado_en|date:"d/m/Y H:i" }}</td>
-                    <td>#{{ pago.folio.id }}</td>
-                    <td>{{ pago.folio.estancia.reserva.huesped.nombres }} {{ pago.folio.estancia.reserva.huesped.apellidos }}</td>
+                    <td>{% if pago.folio %}Folio #{{ pago.folio.id }}{% else %}Reserva #{{ pago.reserva.id }}{% endif %}</td>
+                    <td>
+                        {% if pago.folio %}{{ pago.folio.estancia.reserva.huesped.nombres }} {{ pago.folio.estancia.reserva.huesped.apellidos }}
+                        {% else %}{{ pago.reserva.huesped.nombres }} {{ pago.reserva.huesped.apellidos }}{% endif %}
+                    </td>
                     <td>{{ pago.metodo_pago.nombre }}</td>
                     <td>{{ pago.numero_operacion|default:"Efectivo" }}</td>
                     <td>
@@ -56,6 +61,8 @@
                     </td>
                     <td>{{ pago.estado }}</td>
                     <td>S/ {{ pago.monto }}</td>
+                    <td>{% if pago.total_reembolsado > 0 %}<span class="text-danger">- S/ {{ pago.total_reembolsado }}</span>{% else %}S/ 0.00{% endif %}</td>
+                    <td><strong>S/ {{ pago.monto_neto }}</strong></td>
                     <td>
                         {% if pago.comprobante and pago.comprobante.estado == 'EMITIDO' %}
                             <a href="{% url 'exportar_comprobante' pago.comprobante.id %}" class="btn btn-sm btn-outline-dark">PDF</a>
@@ -63,10 +70,11 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="9" class="text-center text-muted py-4">No hay pagos para los filtros seleccionados.</td></tr>
+                <tr><td colspan="11" class="text-center text-muted py-4">No hay pagos para los filtros seleccionados.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    {% include 'includes/paginacion.html' %}
 </div>
 {% endblock %}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Check-in | Sistema Hotelero{% endblock %}
 
@@ -31,19 +32,27 @@
     </div>
 </div>
 
-<div id="walkin" class="row g-4">
+<div id="walkin" class="row g-4" data-fecha-entrada="{{ hoy|date:'Y-m-d' }}">
     <div class="col-lg-4">
         <div class="card-resumen p-4">
-            <h2 class="h5">Habitaciones disponibles</h2>
-            <div class="d-grid gap-2">
-                {% for habitacion in habitaciones_disponibles %}
-                    <div class="border rounded p-2 bg-light">
-                        <strong>Hab. {{ habitacion.numero }}</strong><br>
-                        <span class="text-muted">{{ habitacion.tipo.nombre }} - Cap. {{ habitacion.tipo.capacidad }} - Piso {{ habitacion.piso }} - S/ {{ habitacion.tipo.precio_base }}</span>
-                    </div>
-                {% empty %}
-                    <p class="text-muted mb-0">No hay habitaciones disponibles.</p>
-                {% endfor %}
+            <h2 class="h5">Buscar disponibilidad</h2>
+            <p class="text-muted small">El ingreso es hoy, {{ hoy|date:"d/m/Y" }}. Indica hasta cuándo se hospedará para evitar conflictos con reservas futuras.</p>
+            <div class="mb-3">
+                <label for="filtro-tipo" class="form-label">Tipo de habitación</label>
+                <select id="filtro-tipo" class="form-select">
+                    <option value="">Todos los tipos</option>
+                    {% for tipo in tipos_habitacion %}
+                        <option value="{{ tipo.id }}">{{ tipo.nombre }} (cap. {{ tipo.capacidad }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="estado-disponibilidad" class="alert alert-secondary mb-3">
+                Selecciona la fecha de salida y la cantidad de adultos.
+            </div>
+            <div id="detalle-habitacion" class="border rounded p-3 d-none">
+                <strong id="detalle-titulo"></strong>
+                <div id="detalle-texto" class="text-muted small mt-1"></div>
+                <div id="detalle-tarifa" class="mt-2 fw-semibold"></div>
             </div>
         </div>
     </div>
@@ -92,6 +101,7 @@
                         <label class="form-label">Habitacion</label>
                         {{ form.habitacion }}
                         {{ form.habitacion.errors }}
+                        <div class="form-text">Solo aparecen habitaciones libres durante toda la estancia.</div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Salida</label>
@@ -103,7 +113,13 @@
                         {{ form.num_adultos }}
                         {{ form.num_adultos.errors }}
                     </div>
-                    <div class="col-md-12">
+                    <div class="col-md-6">
+                        <label class="form-label">Promoción</label>
+                        {{ form.promocion }}
+                        {{ form.promocion.errors }}
+                        <div class="form-text">Se valida según habitación y fechas.</div>
+                    </div>
+                    <div class="col-md-6">
                         <label class="form-label">Origen</label>
                         {{ form.origen }}
                     </div>
@@ -160,10 +176,14 @@
                 </div>
 
                 <div class="d-flex justify-content-end mt-4">
-                    <button type="submit" class="btn btn-dark">Registrar check-in</button>
+                    <button id="btn-checkin" type="submit" class="btn btn-dark">Registrar check-in</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/pages/checkin_directo.js' %}"></script>
 {% endblock %}

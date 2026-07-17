@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Housekeeping | Sistema Hotelero{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/usuarios_limpieza_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include 'habitaciones/_module_nav.html' %}
+
+<div class="hk-hero">
+    <div>
+        <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;">Housekeeping</h1>
+        <p>Limpieza, habitaciones listas y seguimiento de mantenimiento.</p>
+    </div>
+    <span class="hk-date">Turno del {{ hoy|date:"d/m/Y" }}</span>
+</div>
+
+{% if messages %}{% for message in messages %}<div class="alert alert-info">{{ message }}</div>{% endfor %}{% endif %}
+
+<div class="hk-stats">
+    <div class="hk-stat"><strong>{{ limpieza_hoy|length }}</strong><span>Limpieza de hoy</span></div>
+    <div class="hk-stat danger"><strong>{{ limpieza_atrasada|length }}</strong><span>Limpiezas atrasadas</span></div>
+    <div class="hk-stat"><strong>{{ limpieza_sin_checkout|length }}</strong><span>Otras limpiezas</span></div>
+    <div class="hk-stat dark"><strong>{{ habitaciones_mantenimiento|length }}</strong><span>En mantenimiento</span></div>
+</div>
+
+<form method="get" class="card-resumen p-3 mb-4">
+    <div class="row g-2 align-items-end">
+        <div class="col-sm-6 col-md-4">
+            <label for="piso" class="form-label">Filtrar por piso</label>
+            <select name="piso" id="piso" class="form-select">
+                <option value="">Todos los pisos</option>
+                {% for piso in pisos %}<option value="{{ piso }}" {% if piso_seleccionado == piso|stringformat:"s" %}selected{% endif %}>Piso {{ piso }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-sm-6 col-md-2 d-grid"><button class="btn btn-dark">Aplicar</button></div>
+        {% if piso_seleccionado %}<div class="col-md-2 d-grid"><a href="{% url 'limpieza_dashboard' %}" class="btn btn-outline-secondary">Limpiar filtro</a></div>{% endif %}
+    </div>
+</form>
+
+<section class="hk-section">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div><h2 class="h4 mb-0">Checkout realizado hoy</h2><small class="text-muted">Prioridad del turno actual</small></div>
+        <span class="badge text-bg-warning">{{ limpieza_hoy|length }}</span>
+    </div>
+    <div class="hk-grid">
+        {% for habitacion in limpieza_hoy %}
+        <article class="hk-card">
+            <div class="hk-room">Habitación {{ habitacion.numero }}</div>
+            <div class="hk-meta">Piso {{ habitacion.piso }} · {{ habitacion.tipo.nombre }}<br>Checkout: {{ habitacion.ultimo_checkout_fecha|date:"d/m/Y H:i" }}</div>
+            <div class="hk-actions">
+                <form method="post" action="{% url 'cambiar_estado_habitacion' habitacion.id %}{% if piso_seleccionado %}?piso={{ piso_seleccionado }}{% endif %}">{% csrf_token %}<input type="hidden" name="estado" value="DISPONIBLE"><button class="btn btn-sm btn-success">Marcar LISTA</button></form>
+                <a href="{% url 'cambiar_estado_habitacion' habitacion.id %}" class="btn btn-sm btn-outline-dark">Reportar problema</a>
+            </div>
+        </article>
+        {% empty %}<p class="text-muted">No hay habitaciones de checkout de hoy pendientes de limpieza.</p>{% endfor %}
+    </div>
+</section>
+
+{% if limpieza_atrasada %}
+<section class="hk-section">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div><h2 class="h4 mb-0 text-danger">Limpieza atrasada</h2><small class="text-muted">Pendientes de días anteriores</small></div>
+        <span class="badge text-bg-danger">{{ limpieza_atrasada|length }}</span>
+    </div>
+    <div class="hk-grid">
+        {% for habitacion in limpieza_atrasada %}
+        <article class="hk-card atrasada">
+            <div class="hk-room">Habitación {{ habitacion.numero }}</div>
+            <div class="hk-meta">Piso {{ habitacion.piso }} · Checkout: {{ habitacion.ultimo_checkout_fecha|date:"d/m/Y H:i" }}</div>
+            <div class="hk-actions">
+                <form method="post" action="{% url 'cambiar_estado_habitacion' habitacion.id %}{% if piso_seleccionado %}?piso={{ piso_seleccionado }}{% endif %}">{% csrf_token %}<input type="hidden" name="estado" value="DISPONIBLE"><button class="btn btn-sm btn-success">Marcar LISTA</button></form>
+                <a href="{% url 'cambiar_estado_habitacion' habitacion.id %}" class="btn btn-sm btn-outline-danger">Detalle</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if limpieza_sin_checkout %}
+<section class="hk-section">
+    <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Otras limpiezas</h2><span class="badge text-bg-secondary">{{ limpieza_sin_checkout|length }}</span></div>
+    <div class="hk-grid">
+        {% for habitacion in limpieza_sin_checkout %}
+        <article class="hk-card">
+            <div class="hk-room">Habitación {{ habitacion.numero }}</div>
+            <div class="hk-meta">Piso {{ habitacion.piso }} · Limpieza operativa sin checkout reciente</div>
+            <form method="post" action="{% url 'cambiar_estado_habitacion' habitacion.id %}{% if piso_seleccionado %}?piso={{ piso_seleccionado }}{% endif %}">{% csrf_token %}<input type="hidden" name="estado" value="DISPONIBLE"><button class="btn btn-sm btn-success">Marcar LISTA</button></form>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="hk-section">
+    <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">En mantenimiento</h2><span class="badge text-bg-dark">{{ habitaciones_mantenimiento|length }}</span></div>
+    <div class="hk-grid">
+        {% for habitacion in habitaciones_mantenimiento %}
+        <article class="hk-card is-maintenance">
+            <div class="hk-room">Habitación {{ habitacion.numero }}</div>
+            <div class="hk-meta">Piso {{ habitacion.piso }} · {{ habitacion.tipo.nombre }}
+                {% if habitacion.ultima_observacion %}<br>{{ habitacion.ultima_observacion }} · {{ habitacion.ultima_observacion_fecha|date:"d/m/Y H:i" }}{% endif %}
+            </div>
+            <div class="hk-actions">
+                <form method="post" action="{% url 'cambiar_estado_habitacion' habitacion.id %}{% if piso_seleccionado %}?piso={{ piso_seleccionado }}{% endif %}">{% csrf_token %}<input type="hidden" name="estado" value="LIMPIEZA"><button class="btn btn-sm btn-warning">Reparación terminada → Limpieza</button></form>
+                <a href="{% url 'cambiar_estado_habitacion' habitacion.id %}" class="btn btn-sm btn-outline-dark">Historial</a>
+            </div>
+        </article>
+        {% empty %}<p class="text-muted">No hay habitaciones en mantenimiento.</p>{% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Plano del hotel | Sistema Hotelero{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/usuarios_estado_habitaciones.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include 'habitaciones/_module_nav.html' %}
+
+<div class="plano-page">
+<div class="plano-header">
+    <div>
+        <h1 class="display-6 plano-title">Plano del hotel</h1>
+        <p class="text-muted mb-1">Estado operativo de habitaciones por piso.</p>
+        <span class="status-live" id="live-status">Actualización automática cada 15 segundos</span>
+    </div>
+    <button type="button" class="btn btn-outline-success" id="refresh-button">
+        Actualizar ahora
+    </button>
+</div>
+
+<div class="summary-grid" aria-label="Resumen de habitaciones">
+    <div class="summary-card"><span class="summary-dot dot-disponible"></span><div><div class="summary-value" id="count-disponible">{{ resumen.DISPONIBLE }}</div><div class="summary-label">Disponibles</div></div></div>
+    <div class="summary-card"><span class="summary-dot dot-reservada"></span><div><div class="summary-value" id="count-reservada">{{ resumen.RESERVADA }}</div><div class="summary-label">Reservadas</div></div></div>
+    <div class="summary-card"><span class="summary-dot dot-ocupada"></span><div><div class="summary-value" id="count-ocupada">{{ resumen.OCUPADA }}</div><div class="summary-label">Ocupadas</div></div></div>
+    <div class="summary-card"><span class="summary-dot dot-limpieza"></span><div><div class="summary-value" id="count-limpieza">{{ resumen.LIMPIEZA }}</div><div class="summary-label">Limpieza</div></div></div>
+    <div class="summary-card"><span class="summary-dot dot-mantenimiento"></span><div><div class="summary-value" id="count-mantenimiento">{{ resumen.MANTENIMIENTO }}</div><div class="summary-label">Mantenimiento</div></div></div>
+</div>
+
+<div class="filters-panel">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label for="filter-hotel" class="form-label">Hotel</label>
+            <select id="filter-hotel" class="form-select">
+                <option value="">Todos</option>
+                {% for id, nombre in hoteles %}<option value="{{ id }}">{{ nombre }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="filter-piso" class="form-label">Piso</label>
+            <select id="filter-piso" class="form-select">
+                <option value="">Todos</option>
+                {% for piso in pisos %}<option value="{{ piso }}">Piso {{ piso }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="filter-tipo" class="form-label">Tipo de habitación</label>
+            <select id="filter-tipo" class="form-select">
+                <option value="">Todos</option>
+                {% for id, nombre in tipos %}<option value="{{ id }}">{{ nombre }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="filter-estado" class="form-label">Estado</label>
+            <select id="filter-estado" class="form-select">
+                <option value="">Todos</option>
+                <option value="DISPONIBLE">Disponible</option>
+                <option value="RESERVADA">Reservada</option>
+                <option value="OCUPADA">Ocupada</option>
+                <option value="LIMPIEZA">Limpieza</option>
+                <option value="MANTENIMIENTO">Mantenimiento</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="legend" aria-label="Leyenda de estados">
+    <span class="legend-item"><span class="legend-dot dot-disponible"></span>Disponible</span>
+    <span class="legend-item"><span class="legend-dot dot-reservada"></span>Reservada</span>
+    <span class="legend-item"><span class="legend-dot dot-ocupada"></span>Ocupada</span>
+    <span class="legend-item"><span class="legend-dot dot-limpieza"></span>Limpieza</span>
+    <span class="legend-item"><span class="legend-dot dot-mantenimiento"></span>Mantenimiento</span>
+</div>
+
+<div class="habitacion-grid" id="room-grid" aria-live="polite"
+     data-source="{% url 'estado_habitaciones_datos' %}">
+    {% for item in habitaciones_estado %}
+        <button type="button"
+                class="room-cell room-{{ item.estado_general|lower }}"
+                data-room-id="{{ item.habitacion.id }}"
+                data-hotel-id="{{ item.habitacion.hotel_id }}"
+                data-hotel="{{ item.habitacion.hotel.nombre }}"
+                data-tipo-id="{{ item.habitacion.tipo_id }}"
+                data-tipo="{{ item.habitacion.tipo.nombre }}"
+                data-capacidad="{{ item.habitacion.tipo.capacidad }}"
+                data-piso="{{ item.habitacion.piso }}"
+                data-numero="{{ item.habitacion.numero }}"
+                data-estado="{{ item.estado_general }}"
+                data-reserva-id="{% if item.reserva %}{{ item.reserva.id }}{% endif %}"
+                data-huesped="{{ item.huesped_nombre }}"
+                aria-label="Habitación {{ item.habitacion.numero }}, {{ item.estado_general|lower }}">
+            <div class="room-number">Hab. {{ item.habitacion.numero }}</div>
+            <div class="room-type">{{ item.habitacion.tipo.nombre }}</div>
+            <div class="room-meta">Piso {{ item.habitacion.piso }} · Cap. {{ item.habitacion.tipo.capacidad }}</div>
+            <span class="room-state">{{ item.estado_general }}</span>
+        </button>
+    {% empty %}
+        <div class="empty-state">No hay habitaciones registradas.</div>
+    {% endfor %}
+</div>
+
+<div class="modal fade" id="room-detail-modal" tabindex="-1" aria-labelledby="room-detail-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="room-detail-title">Detalle de habitación</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row mb-0">
+                    <dt class="col-5">Hotel</dt><dd class="col-7" id="detail-hotel"></dd>
+                    <dt class="col-5">Tipo</dt><dd class="col-7" id="detail-tipo"></dd>
+                    <dt class="col-5">Piso</dt><dd class="col-7" id="detail-piso"></dd>
+                    <dt class="col-5">Capacidad</dt><dd class="col-7" id="detail-capacidad"></dd>
+                    <dt class="col-5">Estado</dt><dd class="col-7"><span class="badge" id="detail-estado"></span></dd>
+                    <dt class="col-5 d-none" id="detail-huesped-label">Huésped</dt><dd class="col-7 d-none" id="detail-huesped"></dd>
+                </dl>
+                <hr>
+                <h3 class="h6">Historial reciente de estados</h3>
+                <div class="small" id="detail-history"></div>
+            </div>
+            <div class="modal-footer">
+                <a class="btn btn-outline-secondary d-none" id="detail-reserva-link" href="#">Ver reserva</a>
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/pages/estado_habitaciones.js' %}"></script>
+{% endblock %}

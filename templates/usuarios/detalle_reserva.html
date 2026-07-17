@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Reserva #{{ reserva.id }} | Sistema Hotelero{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/usuarios_detalle_reserva.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+  <div>
+    <div class="text-muted small">Reserva #{{ reserva.id }}</div>
+    <h1 class="display-6 mb-1" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</h1>
+    <span class="badge {% if reserva.estado == 'CONFIRMADA' %}text-bg-success{% elif reserva.estado == 'PENDIENTE' %}text-bg-warning{% elif reserva.estado == 'CHECKIN' %}text-bg-primary{% elif reserva.estado == 'CANCELADA' or reserva.estado == 'NO_SHOW' %}text-bg-danger{% else %}text-bg-dark{% endif %}">{{ reserva.get_estado_display }}</span>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'lista_reservas' %}" class="btn btn-outline-dark">Volver a reservas</a>
+    {% if puede_operar %}
+      {% if reserva.estado == 'PENDIENTE' %}<a href="{% url 'pagar_reserva' reserva.id %}" class="btn btn-warning">Registrar adelanto</a>{% endif %}
+      {% if reserva.estado == 'CONFIRMADA' %}<a href="{% url 'realizar_checkin' reserva.id %}" class="btn btn-dark">Realizar check-in</a>{% endif %}
+      {% if reserva.estado == 'PENDIENTE' or reserva.estado == 'CONFIRMADA' %}<a href="{% url 'cancelar_reserva' reserva.id %}" class="btn btn-outline-danger">Cancelar</a>{% endif %}
+      {% if reserva.estado == 'CHECKIN' %}{% if folio %}<a href="{% url 'pagar_folio' folio.id %}" class="btn btn-outline-success">Abrir folio</a>{% endif %}<a href="{% url 'realizar_checkout' reserva.id %}" class="btn btn-dark">Realizar check-out</a>{% endif %}
+    {% endif %}
+  </div>
+</div>
+{% if messages %}{% for message in messages %}<div class="alert alert-info">{{ message }}</div>{% endfor %}{% endif %}
+
+<div class="detail-grid">
+  <section class="card-resumen p-4 span-8">
+    <h2 class="h5 mb-3">Datos de la reserva</h2>
+    <div class="row g-3">
+      <div class="col-md-4"><div class="detail-label">Hotel</div><div class="detail-value">{{ reserva.hotel.nombre }}</div></div>
+      <div class="col-md-4"><div class="detail-label">Habitación</div><div class="detail-value">{% if reserva.habitacion %}{{ reserva.habitacion.numero }} · {{ reserva.habitacion.tipo.nombre }}{% else %}Sin asignar{% endif %}</div></div>
+      <div class="col-md-4"><div class="detail-label">Origen</div><div class="detail-value">{{ reserva.origen|default:"No registrado" }}</div></div>
+      <div class="col-md-4"><div class="detail-label">Entrada</div><div class="detail-value">{{ reserva.fecha_entrada|date:"d/m/Y" }}</div></div>
+      <div class="col-md-4"><div class="detail-label">Salida</div><div class="detail-value">{{ reserva.fecha_salida|date:"d/m/Y" }}</div></div>
+      <div class="col-md-4"><div class="detail-label">Adultos</div><div class="detail-value">{{ reserva.num_adultos }}</div></div>
+    </div>
+    {% if reserva.detalle_tarifa %}<hr><div class="detail-label mb-2">Desglose acordado</div><div class="d-flex flex-wrap gap-2">{% for linea in reserva.detalle_tarifa %}<span class="badge text-bg-light border">{{ linea.fecha }} · {{ linea.tarifa_nombre }} · S/ {{ linea.precio_noche }}{% if linea.promocion_nombre %} · {{ linea.promocion_nombre }}{% endif %}</span>{% endfor %}</div>{% endif %}
+  </section>
+
+  <section class="card-resumen p-4 span-4">
+    <h2 class="h5 mb-3">Huésped principal</h2>
+    <div class="detail-label">Documento</div><div class="detail-value mb-2">{{ reserva.huesped.get_tipo_doc_display }} {{ reserva.huesped.num_doc }}</div>
+    <div class="detail-label">Teléfono</div><div class="detail-value mb-2">{{ reserva.huesped.telefono|default:"-" }}</div>
+    <div class="detail-label">Correo</div><div class="detail-value mb-2">{{ reserva.huesped.email|default:"-" }}</div>
+    <div class="detail-label">Nacionalidad</div><div class="detail-value">{{ reserva.huesped.nacionalidad }}</div>
+    {% if reserva.acompanantes.all %}<hr><div class="detail-label mb-2">Acompañantes</div>{% for persona in reserva.acompanantes.all %}<div class="small">{{ persona.nombres }} {{ persona.apellidos }} · {{ persona.num_doc }}</div>{% endfor %}{% endif %}
+  </section>
+
+  <section class="card-resumen p-4 span-6">
+    <h2 class="h5 mb-3">Tarifa y garantía</h2>
+    <div class="row g-3">
+      <div class="col-6"><div class="detail-label">Precio original</div><div class="detail-value">S/ {{ reserva.precio_sin_descuento }}</div></div>
+      <div class="col-6"><div class="detail-label">Promoción</div><div class="detail-value text-success">- S/ {{ reserva.descuento_promocion }}</div></div>
+      <div class="col-6"><div class="detail-label">Total acordado</div><div class="detail-value fs-5">S/ {{ reserva.precio_total }}</div></div>
+      <div class="col-6"><div class="detail-label">Garantía requerida</div><div class="detail-value">S/ {{ reserva.monto_adelanto_requerido }} ({{ reserva.porcentaje_adelanto }}%)</div></div>
+      <div class="col-6"><div class="detail-label">Pagado bruto</div><div class="detail-value">S/ {{ reserva.total_adelantado }}</div></div>
+      <div class="col-6"><div class="detail-label">Ingreso neto</div><div class="detail-value">S/ {{ total_neto }}</div></div>
+    </div>
+    {% if reserva.fecha_limite_pago %}<div class="form-text mt-3">Límite de garantía: {{ reserva.fecha_limite_pago|date:"d/m/Y H:i" }}</div>{% endif %}
+  </section>
+
+  <section class="card-resumen p-4 span-6">
+    <h2 class="h5 mb-3">Pagos y comprobantes</h2>
+    <div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Fecha</th><th>Método</th><th>Pagado</th><th>Devuelto</th><th>PDF</th></tr></thead><tbody>
+      {% for pago in pagos %}<tr><td>{{ pago.creado_en|date:"d/m/Y H:i" }}</td><td>{{ pago.metodo_pago.nombre }}</td><td>S/ {{ pago.monto }}</td><td>S/ {{ pago.total_reembolsado }}</td><td>{% if pago.comprobante %}<a href="{% url 'exportar_comprobante' pago.comprobante.id %}" class="btn btn-sm btn-outline-dark">PDF</a>{% endif %}</td></tr>{% empty %}<tr><td colspan="5" class="text-center text-muted py-3">Sin pagos registrados.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+
+  {% if reserva.estado == 'CANCELADA' %}
+  <section class="card-resumen p-4 span-12"><h2 class="h5">Cancelación</h2><div class="row g-3">
+    <div class="col-md-3"><div class="detail-label">Tipo</div><div class="detail-value">{{ reserva.get_tipo_cancelacion_display }}</div></div><div class="col-md-3"><div class="detail-label">Fecha</div><div class="detail-value">{{ reserva.cancelada_en|date:"d/m/Y H:i" }}</div></div><div class="col-md-3"><div class="detail-label">Devuelto</div><div class="detail-value">S/ {{ reserva.monto_reembolsado }}</div></div><div class="col-md-3"><div class="detail-label">Retenido</div><div class="detail-value">S/ {{ reserva.monto_retenido }}</div></div><div class="col-12"><div class="detail-label">Motivo</div><div class="detail-value">{{ reserva.motivo_cancelacion }}</div></div>
+  </div></section>
+  {% endif %}
+
+  {% if estancia %}
+  <section class="card-resumen p-4 span-8"><h2 class="h5 mb-3">Estancia y folio</h2><div class="row g-3">
+    <div class="col-md-4"><div class="detail-label">Check-in real</div><div class="detail-value">{{ estancia.fecha_checkin|date:"d/m/Y H:i" }}</div></div><div class="col-md-4"><div class="detail-label">Check-out real</div><div class="detail-value">{% if estancia.fecha_checkout %}{{ estancia.fecha_checkout|date:"d/m/Y H:i" }}{% else %}Pendiente{% endif %}</div></div><div class="col-md-4"><div class="detail-label">Estado estancia</div><div class="detail-value">{{ estancia.get_estado_display }}</div></div>
+    {% if folio %}<div class="col-md-4"><div class="detail-label">Total folio</div><div class="detail-value">S/ {{ folio.total }}</div></div><div class="col-md-4"><div class="detail-label">Pagado</div><div class="detail-value">S/ {{ folio.total_pagado }}</div></div><div class="col-md-4"><div class="detail-label">Saldo</div><div class="detail-value">S/ {{ folio.saldo_pendiente }}</div></div>{% endif %}
+  </div>{% if estancia.cargos.all %}<hr><div class="detail-label mb-2">Cargos</div>{% for cargo in estancia.cargos.all %}<div class="d-flex justify-content-between border-bottom py-2"><span>{{ cargo.concepto }}</span><strong>S/ {{ cargo.monto }}</strong></div>{% endfor %}{% endif %}</section>
+  {% endif %}
+
+  <section class="card-resumen p-4 {% if estancia %}span-4{% else %}span-12{% endif %}"><h2 class="h5 mb-3">Historial de estados</h2><div class="timeline">
+    {% for cambio in reserva.historial_estados.all %}<div class="timeline-item"><div class="fw-medium">{{ cambio.get_estado_nuevo_display }}</div><div class="small text-muted">{{ cambio.cambiado_en|date:"d/m/Y H:i" }}{% if cambio.cambiado_por %} · {{ cambio.cambiado_por.username }}{% endif %}</div><div class="small">{{ cambio.motivo }}</div></div>{% empty %}<div class="text-muted">Sin historial disponible.</div>{% endfor %}
+  </div></section>
+</div>
+{% endblock %}

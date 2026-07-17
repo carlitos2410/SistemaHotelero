@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ modo }} {{ titulo }} | Administrador{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/usuarios_admin_maestro_form.css' %}">
+{% endblock %}
+
+{% block content %}
+{% if habitaciones_seccion %}{% include 'habitaciones/_module_nav.html' %}{% endif %}
+
+<div class="master-form-shell">
+    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-4">
+        <div>
+            <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">{{ modo }} {{ titulo }}</h1>
+            <p class="text-muted mb-0">Completa los datos y guarda los cambios.</p>
+        </div>
+        <a href="{% url 'admin_maestro_lista' tipo %}" class="btn btn-outline-dark btn-sm">Volver</a>
+    </div>
+
+    <form method="post" class="master-form-card" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="master-form-grid">
+            {% for field in form %}
+                <div class="master-form-field {% if field.field.widget.input_type == 'textarea' or field.name == 'amenidades' or field.name == 'descripcion' %}is-wide{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <div class="form-text">{{ field.help_text }}</div>
+                    {% endif %}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-dark">Guardar</button>
+            <a href="{% url 'admin_maestro_lista' tipo %}" class="btn btn-outline-dark">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -24,11 +24,22 @@
             <h2 class="h5">Folio #{{ folio.id }}</h2>
             <p class="mb-1"><strong>Habitacion:</strong> {{ folio.estancia.habitacion.numero }}</p>
             <p class="mb-1"><strong>Huesped:</strong> {{ folio.estancia.reserva.huesped.nombres }} {{ folio.estancia.reserva.huesped.apellidos }}</p>
-            <p class="mb-1"><strong>Subtotal:</strong> S/ {{ folio.subtotal }}</p>
-            <p class="mb-1"><strong>IGV:</strong> S/ {{ folio.igv }}</p>
-            <p class="mb-1"><strong>Total:</strong> S/ {{ folio.total }}</p>
+            {% if folio.estancia.reserva.descuento_promocion > 0 %}
+            <p class="mb-1"><strong>Tarifa original:</strong> S/ {{ folio.estancia.reserva.precio_sin_descuento }}</p>
+            <p class="mb-1 text-success"><strong>Promoción:</strong> - S/ {{ folio.estancia.reserva.descuento_promocion }}</p>
+            {% endif %}
+            <p class="mb-1"><strong>Valor de venta:</strong> S/ {{ folio.subtotal }}</p>
+            <p class="mb-1"><strong>IGV incluido:</strong> S/ {{ folio.igv }}</p>
+            <p class="mb-1"><strong>Total (IGV incluido):</strong> S/ {{ folio.total }}</p>
             <p class="mb-1"><strong>Pagado:</strong> S/ {{ folio.total_pagado }}</p>
-            <p class="mb-0"><strong>Saldo:</strong> S/ {{ folio.saldo_pendiente }}</p>
+            <p class="mb-3"><strong>Saldo:</strong> S/ {{ folio.saldo_pendiente }}</p>
+            <span class="badge {% if folio.estado == 'PAGADO' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ folio.estado }}</span>
+            {% if folio.estancia.estado == 'ACTIVA' %}
+            <div class="d-grid gap-2 mt-3">
+                <a href="{% url 'cargar_consumo' folio.estancia.id %}" class="btn btn-outline-dark btn-sm">Agregar cargo o consumo</a>
+                <a href="{% url 'realizar_checkout' folio.estancia.reserva.id %}" class="btn btn-dark btn-sm">Ir al checkout</a>
+            </div>
+            {% endif %}
         </div>
 
         <div class="card-resumen p-4">
@@ -112,11 +123,19 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Habitacion / estadia</td>
+                            <td>Habitacion / estadia{% if folio.estancia.reserva.descuento_promocion > 0 %} antes de promoción{% endif %}</td>
                             <td>HABITACION</td>
                             <td>1</td>
-                            <td>S/ {{ folio.estancia.precio_final }}</td>
+                            <td>S/ {% if folio.estancia.reserva.descuento_promocion > 0 %}{{ folio.estancia.reserva.precio_sin_descuento }}{% else %}{{ folio.estancia.precio_final }}{% endif %}</td>
                         </tr>
+                        {% if folio.estancia.reserva.descuento_promocion > 0 %}
+                        <tr class="text-success">
+                            <td>Promoción aplicada</td>
+                            <td>DESCUENTO</td>
+                            <td>1</td>
+                            <td>- S/ {{ folio.estancia.reserva.descuento_promocion }}</td>
+                        </tr>
+                        {% endif %}
                         {% for cargo in cargos %}
                         <tr>
                             <td>{{ cargo.concepto }}</td>

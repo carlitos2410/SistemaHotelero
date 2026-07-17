@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Alertas operativas | Sistema Hotelero{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/usuarios_alertas_operativas.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="alerts-header">
+  <div>
+    <h1 class="alerts-title">Alertas operativas</h1>
+    <p class="text-muted mb-0">Seguimiento al {{ panel.fecha|date:"d/m/Y" }}. Los plazos de garantía vencidos se procesan automáticamente.</p>
+  </div>
+  <a href="{% url 'lista_reservas' %}" class="btn btn-outline-dark">Ver reservas</a>
+</div>
+
+<div class="alerts-summary">
+  <div class="alert-metric warning"><strong>{{ panel.garantias_por_vencer|length }}</strong><span>Garantías por vencer</span></div>
+  <div class="alert-metric warning"><strong>{{ panel.llegadas_atrasadas|length }}</strong><span>Llegadas atrasadas</span></div>
+  <div class="alert-metric danger"><strong>{{ panel.no_show_pendientes|length }}</strong><span>Posibles no-show</span></div>
+  <div class="alert-metric danger"><strong>{{ panel.salidas_vencidas|length }}</strong><span>Salidas vencidas</span></div>
+</div>
+
+{% if not panel.total_alertas %}
+<div class="alert alert-success">No hay alertas operativas pendientes en este momento.</div>
+{% endif %}
+
+<div class="alerts-grid">
+  <section class="alerts-card">
+    <div class="alerts-card-head"><h2>Garantías próximas a vencer</h2><span class="badge text-bg-warning">{{ panel.garantias_por_vencer|length }}</span></div>
+    {% for reserva in panel.garantias_por_vencer %}
+    <article class="operational-item">
+      <div class="operational-name">Reserva #{{ reserva.id }} · {{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+      <div class="operational-meta">Vence {{ reserva.fecha_limite_pago|date:"d/m/Y H:i" }} · faltan {{ reserva.minutos_para_vencer }} min · saldo S/ {{ reserva.saldo_adelanto }}</div>
+      <div class="operational-actions">
+        <a href="{% url 'detalle_reserva' reserva.id %}" class="btn btn-sm btn-outline-dark">Ver detalle</a>
+        {% if puede_operar %}<a href="{% url 'pagar_reserva' reserva.id %}" class="btn btn-sm btn-warning">Completar garantía</a>{% endif %}
+      </div>
+    </article>
+    {% empty %}<div class="alerts-empty">No hay garantías que venzan durante las próximas seis horas.</div>{% endfor %}
+  </section>
+
+  <section class="alerts-card">
+    <div class="alerts-card-head"><h2>Llegadas atrasadas</h2><span class="badge text-bg-warning">{{ panel.llegadas_atrasadas|length }}</span></div>
+    {% for reserva in panel.llegadas_atrasadas %}
+    <article class="operational-item">
+      <div class="operational-name">Reserva #{{ reserva.id }} · {{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+      <div class="operational-meta">Entrada prevista {{ reserva.fecha_entrada|date:"d/m/Y" }} · Hab. {{ reserva.habitacion.numero|default:"Sin asignar" }} · {{ reserva.get_estado_display }}</div>
+      <div class="operational-actions">
+        <a href="{% url 'detalle_reserva' reserva.id %}" class="btn btn-sm btn-outline-dark">Ver detalle</a>
+        {% if puede_operar %}{% if reserva.estado == 'PENDIENTE' %}<a href="{% url 'pagar_reserva' reserva.id %}" class="btn btn-sm btn-warning">Completar garantía</a>{% else %}<a href="{% url 'realizar_checkin' reserva.id %}" class="btn btn-sm btn-warning">Registrar llegada</a>{% endif %}{% endif %}
+      </div>
+    </article>
+    {% empty %}<div class="alerts-empty">No hay llegadas atrasadas.</div>{% endfor %}
+  </section>
+
+  <section class="alerts-card">
+    <div class="alerts-card-head"><h2>Posibles no-show</h2><span class="badge text-bg-danger">{{ panel.no_show_pendientes|length }}</span></div>
+    {% for reserva in panel.no_show_pendientes %}
+    <article class="operational-item">
+      <div class="operational-name">Reserva #{{ reserva.id }} · {{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+      <div class="operational-meta">La estancia reservada terminó el {{ reserva.fecha_salida|date:"d/m/Y" }} sin registrar llegada.</div>
+      <div class="operational-actions">
+        <a href="{% url 'detalle_reserva' reserva.id %}" class="btn btn-sm btn-outline-dark">Ver detalle</a>
+        {% if puede_operar %}<form method="post" action="{% url 'marcar_no_show' reserva.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">Marcar no-show</button></form>{% endif %}
+      </div>
+    </article>
+    {% empty %}<div class="alerts-empty">No hay reservas pendientes de clasificar como no-show.</div>{% endfor %}
+  </section>
+
+  <section class="alerts-card">
+    <div class="alerts-card-head"><h2>Salidas vencidas</h2><span class="badge text-bg-danger">{{ panel.salidas_vencidas|length }}</span></div>
+    {% for reserva in panel.salidas_vencidas %}
+    <article class="operational-item">
+      <div class="operational-name">Hab. {{ reserva.habitacion.numero }} · {{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</div>
+      <div class="operational-meta">Salida vigente {{ reserva.salida_vigente|date:"d/m/Y" }} · Reserva #{{ reserva.id }}</div>
+      <div class="operational-actions">
+        <a href="{% url 'detalle_reserva' reserva.id %}" class="btn btn-sm btn-outline-dark">Ver detalle</a>
+        {% if puede_operar %}{% if reserva.estancia.folio %}<a href="{% url 'pagar_folio' reserva.estancia.folio.id %}" class="btn btn-sm btn-outline-danger">Revisar folio</a>{% endif %}<a href="{% url 'realizar_checkout' reserva.id %}" class="btn btn-sm btn-danger">Finalizar salida</a>{% endif %}
+      </div>
+    </article>
+    {% empty %}<div class="alerts-empty">No hay salidas vencidas.</div>{% endfor %}
+  </section>
+</div>
+{% endblock %}

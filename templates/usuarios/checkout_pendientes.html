@@ -18,7 +18,7 @@
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead>
-                <tr>
+                <tr {% if reserva.salida_vencida %}class="table-danger"{% endif %}>
                     <th>Reserva</th>
                     <th>Huesped</th>
                     <th>Habitacion</th>
@@ -35,7 +35,11 @@
                     <td>{{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</td>
                     <td>{% if reserva.habitacion %}Hab. {{ reserva.habitacion.numero }}{% else %}Sin asignar{% endif %}</td>
                     <td>{{ reserva.estancia.fecha_checkin|date:"d/m/Y H:i" }}</td>
-                    <td>{{ reserva.fecha_salida }}</td>
+                    <td>
+                        <div>{{ reserva.salida_vigente|date:"d/m/Y" }}</div>
+                        <small class="text-muted">Original: {{ reserva.fecha_salida|date:"d/m/Y" }}</small>
+                        {% if reserva.salida_vencida %}<span class="badge text-bg-danger d-block mt-1">Salida vencida</span>{% endif %}
+                    </td>
                     <td>
                         {% if reserva.estancia.folio %}
                             S/ {{ reserva.estancia.folio.total }}
@@ -43,7 +47,19 @@
                             Pendiente
                         {% endif %}
                     </td>
-                    <td><a href="{% url 'realizar_checkout' reserva.id %}" class="btn btn-sm btn-dark">Realizar check-out</a></td>
+                    <td style="min-width:250px;">
+                        <a href="{% url 'realizar_checkout' reserva.id %}" class="btn btn-sm btn-dark mb-2">Realizar check-out</a>
+                        <form method="post" action="{% url 'autorizar_prorroga' reserva.id %}" class="border rounded p-2">
+                            {% csrf_token %}
+                            <label class="form-label small mb-1">Autorizar nueva salida</label>
+                            <input type="date" name="fecha_salida_nueva" class="form-control form-control-sm mb-1" min="{{ fecha_minima_prorroga }}" required>
+                            <input type="text" name="motivo" class="form-control form-control-sm mb-1" placeholder="Motivo (opcional)" maxlength="180">
+                            <button class="btn btn-sm btn-outline-dark w-100">Validar y prorrogar</button>
+                        </form>
+                        {% for prorroga in reserva.prorrogas_historial %}
+                        <small class="d-block text-muted mt-1">Prórroga: {{ prorroga.fecha_salida_anterior|date:"d/m" }} → {{ prorroga.fecha_salida_nueva|date:"d/m" }} · S/ {{ prorroga.monto }}</small>
+                        {% endfor %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="7" class="text-center text-muted py-4">No hay salidas pendientes.</td></tr>

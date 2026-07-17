@@ -1,121 +1,95 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Nueva Reserva{% endblock %}
 
 {% block content %}
 <div class="mb-4">
     <h1 class="fw-bold">Nueva Reserva</h1>
-    <p class="text-muted">Paso 2: registro de huésped y confirmación de la reserva.</p>
+    <p class="text-muted">Busca al huésped, comprueba disponibilidad y confirma la tarifa vigente.</p>
 </div>
 
-<div class="alert alert-info">
-    Las fechas y la habitación fueron definidas en la consulta de disponibilidad. Si deseas cambiarlas, regresa al paso 1.
-</div>
-
-<form method="post" class="card card-resumen p-4 mb-5">
+<form method="post" id="reserva-form" class="card card-resumen p-4 mb-5">
     {% csrf_token %}
-
     {{ reserva_form.habitacion }}
 
     {% if huesped_form.errors or reserva_form.errors %}
-        <div class="alert alert-danger">
-            <strong>Corrige los siguientes errores:</strong>
-            <ul class="mb-0 mt-2">
-                {% for field in huesped_form %}
-                    {% for error in field.errors %}
-                        <li>{{ field.label }}: {{ error }}</li>
-                    {% endfor %}
-                {% endfor %}
-
-                {% for field in reserva_form %}
-                    {% for error in field.errors %}
-                        <li>{{ field.label }}: {{ error }}</li>
-                    {% endfor %}
-                {% endfor %}
-
-                {% for error in huesped_form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-
-                {% for error in reserva_form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
-        </div>
+    <div class="alert alert-danger">
+        <strong>Corrige los siguientes errores:</strong>
+        <ul class="mb-0 mt-2">
+            {% for field in huesped_form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+            {% for field in reserva_form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+            {% for error in huesped_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+            {% for error in reserva_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    </div>
     {% endif %}
 
-    <h4 class="mb-3">Datos del Huésped</h4>
+    <h4 class="mb-3">1. Datos del huésped</h4>
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            {{ huesped_form.tipo_doc.label_tag }}
-            {{ huesped_form.tipo_doc }}
-        </div>
-        <div class="col-md-4">
+        <div class="col-md-3">{{ huesped_form.tipo_doc.label_tag }}{{ huesped_form.tipo_doc }}</div>
+        <div class="col-md-5">
             {{ huesped_form.num_doc.label_tag }}
-            {{ huesped_form.num_doc }}
+            <div class="input-group">
+                {{ huesped_form.num_doc }}
+                <button type="button" class="btn btn-outline-dark" id="buscar-huesped">Buscar</button>
+            </div>
+            <small id="resultado-huesped" class="form-text text-muted">Busca por tipo y número de documento.</small>
         </div>
-        <div class="col-md-4">
-            {{ huesped_form.nacionalidad.label_tag }}
-            {{ huesped_form.nacionalidad }}
-        </div>
-
-        <div class="col-md-6">
-            {{ huesped_form.nombres.label_tag }}
-            {{ huesped_form.nombres }}
-        </div>
-        <div class="col-md-6">
-            {{ huesped_form.apellidos.label_tag }}
-            {{ huesped_form.apellidos }}
-        </div>
-
-        <div class="col-md-6">
-            {{ huesped_form.email.label_tag }}
-            {{ huesped_form.email }}
-        </div>
-        <div class="col-md-6">
-            {{ huesped_form.telefono.label_tag }}
-            {{ huesped_form.telefono }}
-        </div>
+        <div class="col-md-4">{{ huesped_form.nacionalidad.label_tag }}{{ huesped_form.nacionalidad }}</div>
+        <div class="col-md-6">{{ huesped_form.nombres.label_tag }}{{ huesped_form.nombres }}</div>
+        <div class="col-md-6">{{ huesped_form.apellidos.label_tag }}{{ huesped_form.apellidos }}</div>
+        <div class="col-md-6">{{ huesped_form.email.label_tag }}{{ huesped_form.email }}</div>
+        <div class="col-md-6">{{ huesped_form.telefono.label_tag }}{{ huesped_form.telefono }}</div>
     </div>
 
-    <h4 class="mb-3">Datos de la Reserva</h4>
-    <div class="row g-3 mb-4">
+    <h4 class="mb-3">2. Disponibilidad y tarifa</h4>
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">{{ reserva_form.fecha_entrada.label_tag }}{{ reserva_form.fecha_entrada }}</div>
+        <div class="col-md-3">{{ reserva_form.fecha_salida.label_tag }}{{ reserva_form.fecha_salida }}</div>
+        <div class="col-md-2">{{ reserva_form.num_adultos.label_tag }}{{ reserva_form.num_adultos }}</div>
+        <div class="col-md-4">
+            <label class="form-label" for="tipo-habitacion">Tipo de habitación</label>
+            <select id="tipo-habitacion" class="form-select">
+                <option value="">Todos los tipos</option>
+                {% for tipo in tipos_habitacion %}
+                <option value="{{ tipo.id }}" {% if habitacion_seleccionada and habitacion_seleccionada.tipo_id == tipo.id %}selected{% endif %}>{{ tipo.nombre }} (hasta {{ tipo.capacidad }})</option>
+                {% endfor %}
+            </select>
+        </div>
         <div class="col-md-6">
-            <label class="form-label">Habitación</label>
-            <input type="text" class="form-control" value="Hab. {{ habitacion_seleccionada.numero }} - {{ habitacion_seleccionada.hotel.nombre }}" readonly>
-            <small class="text-muted d-block">Capacidad: {{ habitacion_seleccionada.tipo.capacidad }} persona(s).</small>
+            <label class="form-label" for="habitacion-disponible">Habitación disponible</label>
+            <select id="habitacion-disponible" class="form-select">
+                {% if habitacion_seleccionada %}
+                <option value="{{ habitacion_seleccionada.id }}" selected>Hab. {{ habitacion_seleccionada.numero }} · Piso {{ habitacion_seleccionada.piso }} · {{ habitacion_seleccionada.tipo.nombre }}</option>
+                {% else %}
+                <option value="">Completa fechas y capacidad</option>
+                {% endif %}
+            </select>
+            <small id="resultado-disponibilidad" class="form-text text-muted">La disponibilidad se comprueba en tiempo real.</small>
         </div>
-
-        <div class="col-md-3">
-            {{ reserva_form.fecha_entrada.label_tag }}
-            {{ reserva_form.fecha_entrada }}
+        <div class="col-md-6">
+            {{ reserva_form.promocion.label_tag }}{{ reserva_form.promocion }}
+            <small class="form-text text-muted">Solo se mostrarán promociones válidas para el tipo y las fechas elegidas.</small>
         </div>
-
-        <div class="col-md-3">
-            {{ reserva_form.fecha_salida.label_tag }}
-            {{ reserva_form.fecha_salida }}
-        </div>
-
-        <div class="col-md-4">
-            {{ reserva_form.num_adultos.label_tag }}
-            {{ reserva_form.num_adultos }}
-        </div>
-
-        <div class="col-md-4">
-            {{ reserva_form.estado.label_tag }}
-            {{ reserva_form.estado }}
-        </div>
-
-        <div class="col-md-4">
-            {{ reserva_form.origen.label_tag }}
-            {{ reserva_form.origen }}
-        </div>
+        <div class="col-md-3">{{ reserva_form.estado.label_tag }}{{ reserva_form.estado }}</div>
+        <div class="col-md-3">{{ reserva_form.origen.label_tag }}{{ reserva_form.origen }}</div>
     </div>
 
-    <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-dark">Guardar reserva</button>
-        <a href="/disponibilidad/" class="btn btn-secondary">Volver al paso 1</a>
-        <a href="/reservas/" class="btn btn-outline-secondary">Ver reservas</a>
+    <div id="cotizacion" class="alert alert-secondary mb-4" role="status">
+        Selecciona fechas y una habitación para calcular la tarifa.
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap">
+        <button type="submit" id="guardar-reserva" class="btn btn-dark" disabled>Crear reserva pendiente</button>
+        <a href="{% url 'buscar_disponibilidad' %}" class="btn btn-secondary">Consulta detallada</a>
+        <a href="{% url 'lista_reservas' %}" class="btn btn-outline-secondary">Ver reservas</a>
     </div>
 </form>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/pages/nueva_reserva.js' %}"></script>
 {% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load l10n %}
+
+{% block title %}Reportes | Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-start gap-3 flex-wrap">
+    <div>
+        <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Reportes</h1>
+        <p class="text-muted mb-0">Indicadores operativos y financieros del hotel.</p>
+    </div>
+    <a href="{% url 'exportar_reporte_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-dark">Exportar PDF</a>
+</div>
+
+<form method="get" class="card-resumen p-3 mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label">Desde</label>
+            {{ form.fecha_desde }}
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Hasta</label>
+            {{ form.fecha_hasta }}
+            {{ form.fecha_hasta.errors }}
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-outline-dark">Filtrar</button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Reservas</small><h2>{{ total_reservas }}</h2></div></div>
+    <div class="col-md-3"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Estancias</small><h2>{{ total_estancias }}</h2></div></div>
+    <div class="col-md-3"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Ocupación {{ fecha_hasta|date:"d/m/Y" }}</small><h2>{{ ocupacion_actual }}%</h2></div></div>
+    <div class="col-md-3"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Ocupación del periodo</small><h2>{{ reporte_ocupacion.tasa_ocupacion_periodo }}%</h2></div></div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Ocupación últimos 7 días</small><h3>{{ ocupacion_semana }}%</h3></div></div>
+    <div class="col-md-3"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Folios facturados</small><h3>S/ {{ revenue_facturado }}</h3></div></div>
+    <div class="col-md-3"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Flujo neto cobrado</small><h3>S/ {{ revenue_cobrado }}</h3></div></div>
+    <div class="col-md-3"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Huéspedes registrados</small><h3>{{ total_huespedes }}</h3></div></div>
+</div>
+
+<div class="alert alert-light border mb-4 small text-muted">
+    La ocupación usa las fechas reales de check-in y checkout. El flujo neto cobrado considera ingresos menos devoluciones según la fecha efectiva del movimiento de caja.
+    {% if revenue_cobrado_sin_tipo %}<br><strong>Movimiento sin tipo de habitación asignado:</strong> S/ {{ revenue_cobrado_sin_tipo }}.{% endif %}
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card-resumen p-0 h-100">
+            <div class="p-3 border-bottom"><h2 class="h5 mb-0">Ocupación diaria histórica</h2></div>
+            <div class="table-responsive" style="max-height:360px;">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Fecha</th><th>Ocupadas</th><th>Disponibles</th><th style="min-width:180px;">Tasa</th></tr></thead>
+                    <tbody>
+                    {% for dia in serie_diaria %}
+                    <tr>
+                        <td>{{ dia.fecha|date:"d/m/Y" }}</td>
+                        <td>{{ dia.habitaciones_ocupadas }}</td>
+                        <td>{{ dia.habitaciones_disponibles }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height:10px;"><div class="progress-bar bg-success" style="width:{{ dia.tasa_ocupacion|unlocalize }}%"></div></div>
+                                <span>{{ dia.tasa_ocupacion }}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card-resumen p-3 h-100">
+            <h2 class="h5 mb-3">Ocupación y revenue por tipo</h2>
+            {% for item in desglose_tipos %}
+            <div class="mb-4">
+                <div class="d-flex justify-content-between gap-2"><strong>{{ item.tipo }}</strong><span>{{ item.tasa_ocupacion }}%</span></div>
+                <div class="progress my-2" style="height:12px;"><div class="progress-bar bg-dark" style="width:{{ item.tasa_ocupacion|unlocalize }}%"></div></div>
+                <small class="text-muted">
+                    {{ item.habitaciones_noche_ocupadas }} habitaciones-noche ocupadas ·
+                    Facturado S/ {{ item.revenue_facturado }} · Flujo neto S/ {{ item.revenue_cobrado }}
+                </small>
+            </div>
+            {% empty %}<p class="text-muted">No existen tipos de habitación configurados.</p>{% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card-resumen p-0">
+            <div class="p-3 border-bottom"><h2 class="h5 mb-0">Reservas por estado</h2></div>
+            <table class="table mb-0">
+                <tbody>
+                    {% for item in reservas_por_estado %}
+                    <tr><td>{{ item.estado }}</td><td class="text-end">{{ item.total }}</td></tr>
+                    {% empty %}
+                    <tr><td class="text-muted text-center py-4">Sin reservas en el periodo.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card-resumen p-0">
+            <div class="p-3 border-bottom"><h2 class="h5 mb-0">Consumos por tipo</h2></div>
+            <table class="table mb-0">
+                <tbody>
+                    {% for item in cargos_por_tipo %}
+                    <tr><td>{{ item.tipo }}</td><td>{{ item.cantidad }} cargos</td><td class="text-end">S/ {{ item.total }}</td></tr>
+                    {% empty %}
+                    <tr><td class="text-muted text-center py-4">Sin consumos en el periodo.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card-resumen p-0 mt-4">
+    <div class="p-3 border-bottom"><h2 class="h5 mb-0">Ultimas estancias</h2></div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Huesped</th>
+                    <th>Habitacion</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for estancia in ultimas_estancias %}
+                <tr>
+                    <td><a href="{% url 'detalle_reserva' estancia.reserva.id %}" class="text-decoration-none">{{ estancia.reserva.huesped.nombres }} {{ estancia.reserva.huesped.apellidos }}</a></td>
+                    <td>{{ estancia.habitacion.numero }}</td>
+                    <td>{{ estancia.fecha_checkin|date:"d/m/Y H:i" }}</td>
+                    <td>{% if estancia.fecha_checkout %}{{ estancia.fecha_checkout|date:"d/m/Y H:i" }}{% else %}Activa{% endif %}</td>
+                    <td>{{ estancia.estado }}</td>
+                    <td>S/ {{ estancia.precio_final }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">Sin estancias en el periodo.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

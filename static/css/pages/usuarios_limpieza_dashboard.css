@@ -1,0 +1,14 @@
+﻿.hk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(245px,1fr)); gap:1rem; }
+    .hk-hero {display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;padding:1.35rem 1.5rem;margin-bottom:1.25rem;border-radius:16px;background:linear-gradient(135deg,var(--forest-mid),#16261c);color:#fff;border:1px solid rgba(200,169,104,.45)}
+    .hk-hero h1{color:#f4dfb0!important;margin:0}.hk-hero p{color:#d6dfd9;margin:0}.hk-date{border:1px solid rgba(244,223,176,.55);border-radius:999px;padding:.45rem .8rem;color:#f4dfb0;font-size:.85rem}
+    .hk-stats {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.8rem;margin-bottom:1.4rem}
+    .hk-stat {background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem;border-top:4px solid var(--gold)}
+    .hk-stat.danger{border-top-color:#b64b52}.hk-stat.dark{border-top-color:#59635d}.hk-stat strong{display:block;font-size:1.65rem;color:var(--text-main)}.hk-stat span{font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}
+    .hk-card {border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:13px;background:var(--surface);padding:1rem;box-shadow:0 5px 18px rgba(30,45,36,.07)}
+    .hk-card.atrasada { border-color:#dda5a5; background:#fff7f7; }
+    .hk-card.is-maintenance{border-left-color:#59635d}
+    .hk-room { font-family:'Cormorant Garamond',serif; font-size:1.45rem; color:var(--forest); }
+    .hk-meta { color:var(--text-muted); font-size:.83rem; margin:.25rem 0 .8rem; }
+    .hk-actions { display:flex; flex-wrap:wrap; gap:.4rem; }
+    .hk-section { margin-bottom:2rem; }
+    @media(max-width:800px){.hk-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}

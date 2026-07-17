@@ -21,7 +21,7 @@
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead>
-                <tr>
+                <tr {% if reserva.ingreso_vencido %}class="table-warning"{% endif %}>
                     <th>Reserva</th>
                     <th>Huesped</th>
                     <th>Habitacion</th>
@@ -39,8 +39,22 @@
                     <td>{% if reserva.habitacion %}Hab. {{ reserva.habitacion.numero }}{% else %}Sin asignar{% endif %}</td>
                     <td>{{ reserva.fecha_entrada }}</td>
                     <td>{{ reserva.fecha_salida }}</td>
-                    <td>{{ reserva.estado }}</td>
-                    <td><a href="{% url 'realizar_checkin' reserva.id %}" class="btn btn-sm btn-dark">Realizar check-in</a></td>
+                    <td>
+                        {{ reserva.estado }}
+                        {% if reserva.ingreso_vencido %}<span class="badge text-bg-warning d-block mt-1">Reserva vencida</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if reserva.ingreso_vencido %}
+                        <form method="post" action="{% url 'marcar_no_show' reserva.id %}">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-outline-danger">Marcar no-show</button>
+                        </form>
+                        {% elif reserva.estado == 'PENDIENTE' %}
+                        <a href="{% url 'pagar_reserva' reserva.id %}" class="btn btn-sm btn-warning">Completar adelanto</a>
+                        {% else %}
+                        <a href="{% url 'realizar_checkin' reserva.id %}" class="btn btn-sm btn-dark">Realizar check-in</a>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="7" class="text-center text-muted py-4">No hay reservas pendientes de ingreso.</td></tr>

@@ -60,6 +60,18 @@
         </div>
     </div>
 
+    {% if evaluacion.prorroga_no_autorizada %}
+    <div class="alert alert-warning">
+        <strong>Sobreestadía no autorizada previamente.</strong>
+        Se detectaron {{ evaluacion.noches_adicionales }} noche(s) adicional(es) desde
+        {{ evaluacion.fecha_salida_vigente|date:"d/m/Y" }}, por S/ {{ evaluacion.monto_noches_adicionales }}.
+        El cargo será incorporado al folio antes de finalizar.
+        {% if evaluacion.conflictos_sobreestadia %}
+        <div class="mt-2 fw-semibold">Además, la sobreestadía se cruzó con otra reserva de esta habitación. Recepción debe dejar constancia y coordinar la reasignación afectada.</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <div class="card-resumen p-4 mb-4">
         <h2 class="h5">Calculo de estadia real</h2>
         <div class="row g-3">

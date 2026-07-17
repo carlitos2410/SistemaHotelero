@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Administrador | Sistema Hotelero{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/usuarios_administrador_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="admin-hero">
+    <div>
+        <h1 class="admin-title">Administrador</h1>
+        <p class="text-muted mb-0">Configuracion de maestros, habitaciones, productos, servicios, tarifas y promociones.</p>
+    </div>
+    <div class="admin-actions">
+        <a href="{% url 'dashboard_reportes' %}" class="btn btn-dark btn-sm">Reportes</a>
+        <a href="{% url 'calendario_ocupacion' %}" class="btn btn-outline-dark btn-sm">Calendario mensual</a>
+        <a href="{% url 'exportar_reporte_pdf' %}" class="btn btn-outline-dark btn-sm">Exportar PDF</a>
+    </div>
+</div>
+
+<div class="metric-grid">
+    <div class="metric-card"><small>Habitaciones</small><h2>{{ total_habitaciones }}</h2></div>
+    <div class="metric-card"><small>Tipos</small><h2>{{ total_tipos }}</h2></div>
+    <div class="metric-card"><small>Tarifas</small><h2>{{ total_tarifas }}</h2></div>
+    <div class="metric-card"><small>Promociones</small><h2>{{ total_promociones }}</h2></div>
+</div>
+
+{% if panel_reservas.total_alertas %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center gap-3 flex-wrap">
+    <div><strong>{{ panel_reservas.total_alertas }} alerta(s) operativa(s)</strong><br><small>Garantías, llegadas atrasadas, no-show o salidas vencidas requieren seguimiento.</small></div>
+    <a href="{% url 'alertas_operativas' %}" class="btn btn-sm btn-outline-dark">Revisar alertas</a>
+</div>
+{% endif %}
+
+<div class="hotel-data">
+    <h2 class="h5">Datos del hotel</h2>
+    {% if hotel %}
+        <p class="mb-1"><strong>Nombre:</strong> {{ hotel.nombre }}</p>
+        <p class="mb-1"><strong>RUC:</strong> {{ hotel.ruc }}</p>
+        <p class="mb-1"><strong>Direccion:</strong> {{ hotel.direccion }}</p>
+        <p class="mb-3"><strong>Telefono:</strong> {{ hotel.telefono }}</p>
+        <a href="{% url 'admin_maestro_editar' 'hotel' hotel.id %}" class="btn btn-outline-dark btn-sm">Editar datos del hotel</a>
+    {% else %}
+        <p class="text-muted">Aun no hay un hotel registrado.</p>
+        <a href="{% url 'admin_maestro_crear' 'hotel' %}" class="btn btn-dark btn-sm">Registrar hotel inicial</a>
+    {% endif %}
+</div>
+
+<div class="module-grid">
+    <div class="module-card">
+        <div>
+            <h2>Habitaciones</h2>
+            <p>Crea habitaciones, asigna tipo, piso, numero y estado inicial.</p>
+        </div>
+        <div class="module-actions">
+            <a href="{% url 'admin_maestro_crear' 'habitaciones' %}" class="btn btn-dark btn-sm">Crear</a>
+            <a href="{% url 'modulo_habitaciones' %}" class="btn btn-outline-dark btn-sm">Gestionar</a>
+        </div>
+    </div>
+    <div class="module-card">
+        <div>
+            <h2>Tipos de habitacion</h2>
+            <p>Administra capacidad, precio base y caracteristicas de cada tipo.</p>
+        </div>
+        <div class="module-actions">
+            <a href="{% url 'admin_maestro_crear' 'tipos-habitacion' %}" class="btn btn-dark btn-sm">Crear</a>
+            <a href="{% url 'admin_maestro_lista' 'tipos-habitacion' %}" class="btn btn-outline-dark btn-sm">Gestionar</a>
+        </div>
+    </div>
+    <div class="module-card">
+        <div>
+            <h2>Tarifas</h2>
+            <p>Define precios por temporada, rango de fechas y tipo de habitacion.</p>
+        </div>
+        <div class="module-actions">
+            <a href="{% url 'admin_maestro_crear' 'tarifas' %}" class="btn btn-dark btn-sm">Crear</a>
+            <a href="{% url 'admin_maestro_lista' 'tarifas' %}" class="btn btn-outline-dark btn-sm">Gestionar</a>
+        </div>
+    </div>
+    <div class="module-card">
+        <div>
+            <h2>Productos y servicios</h2>
+            <p>Crea servicios como lavanderia, restaurante, minibar, agua o gaseosas.</p>
+        </div>
+        <div class="module-actions">
+            <a href="{% url 'admin_maestro_crear' 'productos-servicios' %}" class="btn btn-dark btn-sm">Crear</a>
+            <a href="{% url 'admin_maestro_lista' 'productos-servicios' %}" class="btn btn-outline-dark btn-sm">Gestionar</a>
+        </div>
+    </div>
+    <div class="module-card">
+        <div>
+            <h2>Promociones</h2>
+            <p>Configura descuentos comerciales por fechas y tipo de habitacion.</p>
+        </div>
+        <div class="module-actions">
+            <a href="{% url 'admin_maestro_crear' 'promociones' %}" class="btn btn-dark btn-sm">Crear</a>
+            <a href="{% url 'admin_maestro_lista' 'promociones' %}" class="btn btn-outline-dark btn-sm">Gestionar</a>
+        </div>
+    </div>
+    <div class="module-card">
+        <div>
+            <h2>Politica de cobro</h2>
+            <p>Define si el checkout cobra estadia real, reserva completa o penalidad.</p>
+        </div>
+        <div class="module-actions">
+            <a href="{% url 'configurar_cobro' %}" class="btn btn-dark btn-sm">Configurar</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

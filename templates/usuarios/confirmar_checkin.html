@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Confirmar check-in | Sistema Hotelero{% endblock %}
 
@@ -8,6 +9,13 @@
         <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Confirmar check-in</h1>
         <p class="text-muted mb-0">Revisa la condicion del ingreso antes de ocupar la habitacion.</p>
     </div>
+
+    {% if errores_ingreso %}
+    <div class="alert alert-danger">
+        <strong>No se puede confirmar el ingreso:</strong>
+        {% for error in errores_ingreso %}<div>{{ error }}</div>{% endfor %}
+    </div>
+    {% endif %}
 
     <div class="card-resumen p-4 mb-3">
         <div class="row g-3">
@@ -28,6 +36,42 @@
                 <div class="fs-5">{{ reserva.num_adultos }} / {{ reserva.habitacion.tipo.capacidad }}</div>
             </div>
         </div>
+    </div>
+
+    <div class="card-resumen p-4 mb-3">
+        <h2 class="h5">Precio acordado de la estancia</h2>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Tarifa antes de promoción</small>
+                <div id="precio-original-checkin">S/ {{ reserva.precio_sin_descuento }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Descuento promocional</small>
+                <div id="descuento-checkin" class="text-success">- S/ {{ reserva.descuento_promocion }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Total habitación</small>
+                <div id="total-checkin" class="fs-4">S/ {{ reserva.precio_total }}</div>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Adelanto aplicado</small>
+                <div class="fs-5 text-success">S/ {{ reserva.total_adelantado }}</div>
+                <div class="form-text">Se descontara automaticamente del folio.</div>
+            </div>
+            <div class="col-md-8">
+                <small class="text-muted text-uppercase">Política de salida acordada</small>
+                <div>{{ reserva.get_politica_cobro_checkout_display }}{% if reserva.politica_cobro_checkout == 'ESTADIA_REAL_PENALIDAD' %} · {{ reserva.porcentaje_penalidad_salida_anticipada }}% sobre noches no utilizadas{% endif %}</div>
+            </div>
+        </div>
+        {% if reserva.descuento_promocion > 0 %}
+        <div class="mt-3 small">
+            {% for linea in reserva.detalle_tarifa %}
+                {% if linea.promocion_nombre %}
+                    <span class="badge text-bg-success me-1">{{ linea.fecha }} · {{ linea.promocion_nombre }} -{{ linea.porcentaje_descuento }}%</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 
     <div class="card-resumen p-4 mb-3">
@@ -61,11 +105,37 @@
                 <small class="text-muted text-uppercase">Cargo a folio</small>
                 <div class="fs-4">S/ {{ evaluacion.cargo }}</div>
             </div>
+            {% if evaluacion.noches_anticipadas %}
+            <div class="col-md-4">
+                <small class="text-muted text-uppercase">Noches anticipadas</small>
+                <div>{{ evaluacion.noches_anticipadas }}</div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
-    <form method="post">
+    <form method="post" id="checkin-confirm-form"
+          data-habitacion="{{ reserva.habitacion_id }}"
+          data-fecha-entrada="{{ reserva.fecha_entrada|date:'Y-m-d' }}"
+          data-fecha-salida="{{ reserva.fecha_salida|date:'Y-m-d' }}"
+          data-num-personas="{{ reserva.num_adultos }}">
         {% csrf_token %}
+
+        <div class="card-resumen p-4 mb-4">
+            <h2 class="h5">Promoción de la reserva</h2>
+            <label for="promocion-checkin" class="form-label">Seleccionar promoción</label>
+            <select id="promocion-checkin" name="promocion" class="form-select">
+                <option value="">Aplicar mejor promoción automáticamente</option>
+                {% for promocion in promociones_disponibles %}
+                <option value="{{ promocion.id }}" {% if promocion_actual_id|stringformat:"s" == promocion.id|stringformat:"s" %}selected{% endif %}>
+                    {{ promocion.nombre }} · {{ promocion.porcentaje_descuento }}% · {{ promocion.fecha_inicio|date:"d/m/Y" }} al {{ promocion.fecha_fin|date:"d/m/Y" }}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="form-text">El precio se recalculará y quedará guardado al confirmar el check-in.</div>
+            {% if error_promocion %}<div class="text-danger small mt-2">{{ error_promocion }}</div>{% endif %}
+            <div id="estado-promocion-checkin" class="small mt-2"></div>
+        </div>
 
         <div class="card-resumen p-4 mb-4">
             <h2 class="h5">Acompanantes</h2>
@@ -119,8 +189,12 @@
 
         <div class="d-flex gap-2 justify-content-end">
             <a href="{% url 'lista_reservas' %}" class="btn btn-outline-dark">Cancelar</a>
-            <button type="submit" class="btn btn-dark">Confirmar check-in</button>
+            <button type="submit" class="btn btn-dark" {% if errores_ingreso %}disabled{% endif %}>Confirmar check-in</button>
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/pages/confirmar_checkin.js' %}"></script>
 {% endblock %}

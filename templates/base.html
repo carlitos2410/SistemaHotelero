@@ -1,0 +1,150 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema Hotelero{% endblock %}</title>
+
+    <script>
+        (() => {
+            const guardado = localStorage.getItem('hotel-theme');
+            const tema = guardado || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.dataset.theme = tema;
+            document.documentElement.setAttribute('data-bs-theme', tema);
+        })();
+    </script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/module-nav.css' %}">
+    </head>
+
+<body>
+    {% if user.is_authenticated %}
+    <aside class="hotel-sidebar" id="hotel-sidebar" aria-label="Navegacion principal">
+        <div class="sidebar-inner">
+            <div class="sidebar-header">
+            <a class="brand-wrap" href="/">
+                <span class="brand-mark">W</span>
+                <span class="brand-text">
+                    <span class="brand-name">Win Meier</span>
+                    <span class="brand-subtitle">Hotel</span>
+                </span>
+            </a>
+
+            <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Contraer menu" aria-expanded="true">
+                <span aria-hidden="true">&#9776;</span>
+            </button>
+            </div>
+
+            <div class="sidebar-nav">
+                <div class="hotel-nav-links">
+                        {% if es_superusuario %}
+                            <span class="role-pill">Superusuario</span>
+                            <a href="{% url 'administrador_dashboard' %}" class="hotel-nav-link">Dashboard</a>
+                            <a href="{% url 'lista_reservas' %}" class="hotel-nav-link">Reservas</a>
+                            <a href="{% url 'alertas_operativas' %}" class="hotel-nav-link">Alertas</a>
+                            <a href="{% url 'checkin_pendientes' %}" class="hotel-nav-link">Check-in</a>
+                            <a href="{% url 'caja_recepcion' %}" class="hotel-nav-link">Caja</a>
+                            <a href="{% url 'modulo_habitaciones' %}" class="hotel-nav-link">Habitaciones</a>
+                            <a href="{% url 'admin_maestro_lista' 'productos-servicios' %}" class="hotel-nav-link">Productos</a>
+                            <a href="{% url 'dashboard_reportes' %}" class="hotel-nav-link">Reportes</a>
+                            <a href="{% url 'admin:index' %}" class="hotel-nav-link is-primary">Administrar usuarios</a>
+                        {% endif %}
+
+                        {% if es_gerencia %}
+                            <span class="role-pill">Gerencia</span>
+                            <a href="{% url 'gerencia_dashboard' %}" class="hotel-nav-link">Dashboard</a>
+                            <a href="{% url 'lista_reservas' %}" class="hotel-nav-link">Reservas</a>
+                            <a href="{% url 'alertas_operativas' %}" class="hotel-nav-link">Alertas</a>
+                            <a href="{% url 'modulo_habitaciones' %}" class="hotel-nav-link">Habitaciones</a>
+                            <a href="{% url 'dashboard_reportes' %}" class="hotel-nav-link">Reportes</a>
+                            <a href="{% url 'configurar_cobro' %}" class="hotel-nav-link">Politica</a>
+                        {% endif %}
+
+                        {% if es_administrador %}
+                            <span class="role-pill">Administrador</span>
+                            <a href="{% url 'administrador_dashboard' %}" class="hotel-nav-link">Dashboard</a>
+                            <a href="{% url 'lista_reservas' %}" class="hotel-nav-link">Reservas</a>
+                            <a href="{% url 'alertas_operativas' %}" class="hotel-nav-link">Alertas</a>
+                            <a href="{% url 'modulo_habitaciones' %}" class="hotel-nav-link">Habitaciones</a>
+                            <a href="{% url 'admin_maestro_lista' 'productos-servicios' %}" class="hotel-nav-link">Productos</a>
+                            <a href="{% url 'admin_maestro_lista' 'promociones' %}" class="hotel-nav-link">Promociones</a>
+                            <a href="{% url 'dashboard_reportes' %}" class="hotel-nav-link">Reportes</a>
+                            <a href="{% url 'configurar_cobro' %}" class="hotel-nav-link">Politica</a>
+                            <a href="{% url 'admin:auth_user_changelist' %}" class="hotel-nav-link is-primary">Usuarios</a>
+                        {% endif %}
+
+                        {% if es_recepcionista %}
+                            <span class="role-pill">Recepcion</span>
+                            <a href="{% url 'recepcion_dashboard' %}" class="hotel-nav-link">Dashboard</a>
+                            <a href="{% url 'lista_reservas' %}" class="hotel-nav-link">Reservas</a>
+                            <a href="{% url 'alertas_operativas' %}" class="hotel-nav-link">Alertas</a>
+                            <a href="{% url 'checkin_pendientes' %}" class="hotel-nav-link">Check-in</a>
+                            <a href="{% url 'checkout_pendientes' %}" class="hotel-nav-link">Check-out</a>
+                            <a href="{% url 'caja_recepcion' %}" class="hotel-nav-link">Caja</a>
+                            <a href="{% url 'modulo_habitaciones' %}" class="hotel-nav-link">Habitaciones</a>
+                            <a href="{% url 'lista_clientes' %}" class="hotel-nav-link">Clientes</a>
+                            <a href="{% url 'estancias_activas' %}" class="hotel-nav-link">Consumos</a>
+                            <a href="/disponibilidad/" class="hotel-nav-link is-primary">Nueva reserva</a>
+                        {% endif %}
+
+                        {% if es_limpieza %}
+                            <span class="role-pill">Limpieza</span>
+                            <a href="{% url 'modulo_habitaciones' %}" class="hotel-nav-link">Habitaciones</a>
+                        {% endif %}
+
+                        <div class="sidebar-user" title="Usuario actual">{{ user.username }}</div>
+                        <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Cambiar modo de color" aria-pressed="false">
+                            <span id="theme-icon" aria-hidden="true">☾</span>
+                            <span id="theme-label">Modo nocturno</span>
+                        </button>
+
+                        <form action="{% url 'logout' %}" method="post" class="logout-form">
+                            {% csrf_token %}
+                            <button type="submit" class="logout-button"><span aria-hidden="true">&#10140;</span> <span class="logout-label">Cerrar sesion</span></button>
+                        </form>
+                    </div>
+            </div>
+        </div>
+    </aside>
+    <button type="button" class="sidebar-backdrop" id="sidebar-backdrop" aria-label="Cerrar menu"></button>
+    <header class="mobile-app-bar">
+        <a class="brand-wrap" href="/">
+            <span class="brand-mark">W</span>
+            <span class="brand-text"><span class="brand-name">Win Meier</span><span class="brand-subtitle">Hotel</span></span>
+        </a>
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false">&#9776;</button>
+    </header>
+    {% else %}
+    <nav class="navbar hotel-navbar mb-4">
+        <div class="container d-flex justify-content-between">
+            <a class="brand-wrap" href="/">
+                <span class="brand-mark">W</span>
+                <span class="brand-text"><span class="brand-name">Win Meier</span><span class="brand-subtitle">Hotel</span></span>
+            </a>
+            <div class="hotel-nav-links">
+                <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Cambiar modo de color" aria-pressed="false">
+                    <span id="theme-icon" aria-hidden="true">&#9790;</span><span id="theme-label">Modo nocturno</span>
+                </button>
+                <a href="{% url 'login' %}" class="hotel-nav-link is-primary">Ingresar</a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="{% if user.is_authenticated %}app-main{% else %}container{% endif %}">
+        {% block extra_css %}{% endblock %}
+
+{% block content %}
+        {% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/base.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

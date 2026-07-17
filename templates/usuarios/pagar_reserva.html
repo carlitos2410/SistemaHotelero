@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Adelanto de reserva | Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="display-6" style="font-family:'Cormorant Garamond',serif;color:var(--forest);">Garantia de reserva</h1>
+    <p class="text-muted mb-0">La reserva se confirma automaticamente al completar el 50% del total acordado.</p>
+</div>
+
+{% if messages %}{% for message in messages %}<div class="alert alert-info">{{ message }}</div>{% endfor %}{% endif %}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card-resumen p-4 mb-4">
+            <h2 class="h5">Reserva #{{ reserva.id }}</h2>
+            <p class="mb-1"><strong>Huesped:</strong> {{ reserva.huesped.nombres }} {{ reserva.huesped.apellidos }}</p>
+            <p class="mb-1"><strong>Habitacion:</strong> {{ reserva.habitacion.numero }} - {{ reserva.habitacion.tipo.nombre }}</p>
+            <p class="mb-1"><strong>Estadia:</strong> {{ reserva.fecha_entrada|date:"d/m/Y" }} al {{ reserva.fecha_salida|date:"d/m/Y" }}</p>
+            <p class="mb-1"><strong>Total con IGV incluido:</strong> S/ {{ reserva.precio_total }}</p>
+            <p class="mb-1"><strong>Garantia requerida ({{ reserva.porcentaje_adelanto }}%):</strong> S/ {{ reserva.monto_adelanto_requerido }}</p>
+            <p class="mb-1"><strong>Pagado:</strong> S/ {{ reserva.total_adelantado }}</p>
+            <p class="mb-3"><strong>Saldo de garantia:</strong> S/ {{ reserva.saldo_adelanto }}</p>
+            <span class="badge {% if reserva.estado == 'CONFIRMADA' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ reserva.get_estado_display }}</span>
+            {% if reserva.fecha_limite_pago %}<div class="form-text mt-2">Plazo registrado: {{ reserva.fecha_limite_pago|date:"d/m/Y H:i" }}</div>{% endif %}
+            <div class="alert alert-warning small mt-3 mb-0">Si el plazo vence sin completar la garantia, la reserva se cancela, la habitacion se libera y cualquier adelanto parcial queda retenido.</div>
+            <div class="mt-3"><a href="{% url 'cancelar_reserva' reserva.id %}" class="btn btn-outline-danger btn-sm">Cancelar reserva</a></div>
+        </div>
+
+        <div class="card-resumen p-4">
+            <h2 class="h5">Registrar adelanto</h2>
+            {% if form %}
+                {% if form.errors %}<div class="alert alert-danger">{{ form.non_field_errors }}{% for field in form %}{% for error in field.errors %}<div>{{ field.label }}: {{ error }}</div>{% endfor %}{% endfor %}</div>{% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3"><label class="form-label">Metodo</label>{{ form.metodo_pago }}</div>
+                    <div class="mb-3"><label class="form-label">Monto</label>{{ form.monto }}</div>
+                    <div class="mb-3"><label class="form-label">Tipo de comprobante</label>{{ form.tipo_comprobante }}</div>
+                    <div class="mb-3"><label class="form-label">Documento</label>{{ form.cliente_documento }}</div>
+                    <div class="mb-3"><label class="form-label">Nombre / razon social</label>{{ form.cliente_nombre }}</div>
+                    <div class="mb-3"><label class="form-label">Direccion</label>{{ form.cliente_direccion }}</div>
+                    <div class="mb-3"><label class="form-label">Numero de operacion</label>{{ form.numero_operacion }}</div>
+                    <div class="mb-3"><label class="form-label">Observacion</label>{{ form.observacion }}</div>
+                    <button class="btn btn-dark w-100">Registrar adelanto y emitir comprobante</button>
+                </form>
+            {% else %}
+                <div class="alert alert-success">Garantia completada. La reserva esta confirmada.</div>
+                <a href="{% url 'detalle_reserva' reserva.id %}" class="btn btn-outline-dark w-100 mb-2">Ver detalle de reserva</a>
+                <a href="{% url 'realizar_checkin' reserva.id %}" class="btn btn-dark w-100">Continuar al check-in</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card-resumen p-0">
+            <div class="p-3 border-bottom"><h2 class="h5 mb-0">Adelantos registrados</h2></div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Fecha</th><th>Metodo</th><th>Operacion</th><th>Comprobante</th><th>Pagado</th><th>Devuelto</th><th>Neto</th><th></th></tr></thead>
+                    <tbody>
+                    {% for pago in pagos %}
+                        <tr>
+                            <td>{{ pago.creado_en|date:"d/m/Y H:i" }}</td>
+                            <td>{{ pago.metodo_pago.nombre }}</td>
+                            <td>{{ pago.numero_operacion|default:"Efectivo" }}</td>
+                            <td>{{ pago.comprobante.get_tipo_display }} {{ pago.comprobante.correlativo }}</td>
+                            <td>S/ {{ pago.monto }}</td>
+                            <td>{% if pago.total_reembolsado > 0 %}<span class="text-danger">- S/ {{ pago.total_reembolsado }}</span>{% else %}S/ 0.00{% endif %}</td>
+                            <td><strong>S/ {{ pago.monto_neto }}</strong></td>
+                            <td><a href="{% url 'exportar_comprobante' pago.comprobante.id %}" class="btn btn-sm btn-outline-dark">PDF</a></td>
+                        </tr>
+                    {% empty %}<tr><td colspan="8" class="text-center text-muted py-4">Aun no hay adelantos.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

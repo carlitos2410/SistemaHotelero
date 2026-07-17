@@ -1,0 +1,16 @@
+<nav class="module-tabs" aria-label="Módulo de habitaciones" data-sidebar-module="Habitaciones">
+  <span class="module-tabs-label">Habitaciones</span>
+  {% if es_superusuario or es_administrador or es_gerencia or es_recepcionista %}
+  <a href="{% url 'estado_habitaciones' %}" class="module-tab {% if habitaciones_seccion == 'plano' %}active{% endif %}">Plano</a>
+  {% endif %}
+  {% if es_superusuario or es_administrador or es_gerencia or es_recepcionista %}
+  <a href="{% url 'lista_habitaciones' %}" class="module-tab {% if habitaciones_seccion == 'inventario' or habitaciones_seccion == 'habitaciones' %}active{% endif %}">Inventario</a>
+  {% endif %}
+  {% if es_superusuario or es_administrador %}
+  <a href="{% url 'admin_maestro_lista' 'tipos-habitacion' %}" class="module-tab {% if habitaciones_seccion == 'tipos-habitacion' %}active{% endif %}">Tipos</a>
+  <a href="{% url 'admin_maestro_lista' 'tarifas' %}" class="module-tab {% if habitaciones_seccion == 'tarifas' %}active{% endif %}">Tarifas</a>
+  {% endif %}
+  {% if es_limpieza %}
+  <a href="{% url 'limpieza_dashboard' %}" class="module-tab {% if habitaciones_seccion == 'housekeeping' %}active{% endif %}">Housekeeping</a>
+  {% endif %}
+</nav>

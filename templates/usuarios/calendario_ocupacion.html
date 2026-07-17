@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Calendario de ocupacion | Sistema Hotelero{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/usuarios_calendario_ocupacion.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="calendar-header">
+    <div>
+        <h1 class="calendar-title">Calendario de ocupacion</h1>
+        <p class="text-muted mb-0">{{ nombre_mes }} {{ anio }} - vista por habitacion y dia.</p>
+    </div>
+    <div class="calendar-controls">
+        <a class="btn btn-outline-dark btn-sm" href="?anio={{ mes_anterior|date:'Y' }}&mes={{ mes_anterior|date:'n' }}{% if tipo_id %}&tipo={{ tipo_id }}{% endif %}{% if piso_seleccionado %}&piso={{ piso_seleccionado }}{% endif %}">Mes anterior</a>
+        <a class="btn btn-outline-dark btn-sm" href="?anio={{ mes_siguiente|date:'Y' }}&mes={{ mes_siguiente|date:'n' }}{% if tipo_id %}&tipo={{ tipo_id }}{% endif %}{% if piso_seleccionado %}&piso={{ piso_seleccionado }}{% endif %}">Mes siguiente</a>
+        <a class="btn btn-dark btn-sm" href="{% url 'buscar_disponibilidad' %}">Nueva reserva</a>
+    </div>
+</div>
+
+<div class="calendar-summary mb-3">
+    <div class="summary-pill"><small>Disponibles</small><strong>{{ resumen.disponibles }}</strong></div>
+    <div class="summary-pill"><small>Reservadas</small><strong>{{ resumen.reservadas }}</strong></div>
+    <div class="summary-pill"><small>Ocupadas</small><strong>{{ resumen.ocupadas }}</strong></div>
+    <div class="summary-pill"><small>Bloqueadas</small><strong>{{ resumen.bloqueadas }}</strong></div>
+</div>
+
+<form method="get" class="calendar-filter">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">Ir a fecha</label>
+            <input type="date" name="fecha" value="{{ fecha_seleccionada|date:'Y-m-d' }}" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Tipo</label>
+            <select name="tipo" class="form-select">
+                <option value="">Todos</option>
+                {% for tipo in tipos %}
+                    <option value="{{ tipo.tipo_id }}" {% if tipo_id == tipo.tipo_id %}selected{% endif %}>{{ tipo.tipo__nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Piso</label>
+            <select name="piso" class="form-select">
+                <option value="">Todos</option>
+                {% for piso in pisos %}
+                    <option value="{{ piso }}" {% if piso_seleccionado == piso %}selected{% endif %}>Piso {{ piso }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-dark w-100">Filtrar calendario</button>
+        </div>
+    </div>
+</form>
+
+<div class="legend">
+    <span class="legend-item"><span class="legend-dot state-DISPONIBLE"></span>Disponible</span>
+    <span class="legend-item"><span class="legend-dot state-RESERVADA"></span>Reservada</span>
+    <span class="legend-item"><span class="legend-dot state-OCUPADA"></span>Ocupada</span>
+    <span class="legend-item"><span class="legend-dot state-LIMPIEZA"></span>Limpieza</span>
+    <span class="legend-item"><span class="legend-dot state-MANTENIMIENTO"></span>Mantenimiento</span>
+</div>
+
+<div class="calendar-wrap">
+    <table class="occupancy-table table mb-0">
+        <thead>
+            <tr>
+                <th class="room-col">Habitacion</th>
+                {% for dia in dias %}
+                    <th class="{% if dia == hoy %}today-column{% endif %}">
+                        <div>{{ dia|date:"d" }}</div>
+                        <small>{{ dia|date:"D" }}</small>
+                    </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for fila in filas %}
+                <tr>
+                    <td class="room-col">
+                        <div class="room-number">Hab. {{ fila.habitacion.numero }}</div>
+                        <div class="room-meta">{{ fila.habitacion.tipo.nombre }} - Piso {{ fila.habitacion.piso }}</div>
+                    </td>
+                    {% for celda in fila.celdas %}
+                        <td class="day-cell {% if celda.dia == hoy %}today-column{% endif %}">
+                            {% if celda.reserva_id %}
+                                <a class="state-box state-{{ celda.estado }} text-decoration-none" href="{% url 'detalle_reserva' celda.reserva_id %}" title="Reserva #{{ celda.reserva_id }} · {{ celda.detalle }}">
+                                    <span>{{ celda.etiqueta }}</span>
+                                    <span class="state-detail">{{ celda.detalle }}</span>
+                                </a>
+                            {% else %}
+                                <div class="state-box state-{{ celda.estado }}">
+                                    <span>{{ celda.etiqueta }}</span>
+                                </div>
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="{{ dias|length|add:1 }}" class="text-center text-muted py-4">No hay habitaciones para los filtros seleccionados.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

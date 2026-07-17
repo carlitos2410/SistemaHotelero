@@ -49,7 +49,8 @@
                     <td>{{ movimiento.get_concepto_display }}</td>
                     <td>
                         {% if movimiento.pago %}
-                            {{ movimiento.pago.folio.estancia.reserva.huesped.nombres }} {{ movimiento.pago.folio.estancia.reserva.huesped.apellidos }}
+                            {% if movimiento.pago.folio %}{{ movimiento.pago.folio.estancia.reserva.huesped.nombres }} {{ movimiento.pago.folio.estancia.reserva.huesped.apellidos }}
+                            {% else %}{{ movimiento.pago.reserva.huesped.nombres }} {{ movimiento.pago.reserva.huesped.apellidos }}{% endif %}
                         {% else %}
                             -
                         {% endif %}
@@ -72,5 +73,6 @@
             </tbody>
         </table>
     </div>
+    {% include 'includes/paginacion.html' %}
 </div>
 {% endblock %}
