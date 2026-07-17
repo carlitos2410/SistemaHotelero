@@ -39,22 +39,53 @@ class CargoHabitacionForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['producto_servicio'].queryset = ProductoServicio.objects.filter(activo=True)
+        self.fields['producto_servicio'].queryset = ProductoServicio.objects.filter(
+            activo=True,
+            precio__gt=0,
+        ).order_by('categoria', 'nombre')
 
 
 class ConfiguracionCobroForm(forms.ModelForm):
     class Meta:
         model = ConfiguracionCobro
-        fields = ['politica_checkout', 'porcentaje_penalidad_salida_anticipada', 'activo']
+        fields = [
+            'porcentaje_garantia_reserva',
+            'horas_plazo_pago_garantia',
+            'porcentaje_igv',
+            'porcentaje_early_checkin',
+            'porcentaje_late_checkout',
+            'porcentaje_penalidad_salida_anticipada',
+            'horas_cancelacion_gratuita',
+            'porcentaje_retencion_cancelacion_tardia',
+        ]
         widgets = {
-            'politica_checkout': forms.Select(attrs={'class': 'form-select'}),
+            'porcentaje_garantia_reserva': forms.NumberInput(attrs={
+                'class': 'form-control', 'min': '0.01', 'max': '100', 'step': '0.01',
+            }),
+            'horas_plazo_pago_garantia': forms.NumberInput(attrs={
+                'class': 'form-control', 'min': '1', 'step': '1',
+            }),
+            'porcentaje_igv': forms.NumberInput(attrs={
+                'class': 'form-control', 'min': '0', 'max': '100', 'step': '0.01',
+            }),
+            'porcentaje_early_checkin': forms.NumberInput(attrs={
+                'class': 'form-control', 'min': '0', 'max': '100', 'step': '0.01',
+            }),
+            'porcentaje_late_checkout': forms.NumberInput(attrs={
+                'class': 'form-control', 'min': '0', 'max': '100', 'step': '0.01',
+            }),
             'porcentaje_penalidad_salida_anticipada': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '0',
                 'max': '100',
                 'step': '0.01',
             }),
-            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'horas_cancelacion_gratuita': forms.NumberInput(attrs={
+                'class': 'form-control', 'min': '0', 'step': '1',
+            }),
+            'porcentaje_retencion_cancelacion_tardia': forms.NumberInput(attrs={
+                'class': 'form-control', 'min': '0', 'max': '100', 'step': '0.01',
+            }),
         }
 
 
@@ -97,13 +128,17 @@ class PagoForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
-        self.folio = kwargs.pop('folio')
+        self.folio = kwargs.pop('folio', None)
+        self.reserva = kwargs.pop('reserva', None)
+        if (self.folio is None) == (self.reserva is None):
+            raise ValueError('Indica un folio o una reserva, pero no ambos.')
         super().__init__(*args, **kwargs)
         garantizar_metodos_pago()
         self.fields['metodo_pago'].queryset = MetodoPago.objects.filter(activo=True)
-        self.fields['monto'].initial = self.folio.saldo_pendiente
+        self.saldo_maximo = self.folio.saldo_pendiente if self.folio else self.reserva.saldo_adelanto
+        self.fields['monto'].initial = self.saldo_maximo
 
-        huesped = self.folio.estancia.reserva.huesped
+        huesped = self.folio.estancia.reserva.huesped if self.folio else self.reserva.huesped
         self.fields['cliente_documento'].initial = huesped.num_doc
         self.fields['cliente_nombre'].initial = f'{huesped.nombres} {huesped.apellidos}'
 
@@ -112,8 +147,8 @@ class PagoForm(forms.Form):
 
         if monto <= 0:
             raise forms.ValidationError('El monto debe ser mayor a cero.')
-        if monto > self.folio.saldo_pendiente:
-            raise forms.ValidationError('El monto no puede ser mayor al saldo pendiente.')
+        if monto > self.saldo_maximo:
+            raise forms.ValidationError(f'El monto no puede superar el saldo pendiente de S/ {self.saldo_maximo}.')
 
         return monto
 
@@ -124,8 +159,8 @@ class PagoForm(forms.Form):
 
         if tipo == 'FACTURA':
             documento = cleaned_data.get('cliente_documento') or ''
-            if len(documento) != 11:
-                self.add_error('cliente_documento', 'Para factura ingresa un RUC de 11 digitos.')
+            if len(documento) != 11 or not documento.isdigit():
+                self.add_error('cliente_documento', 'Para factura ingresa un RUC valido de 11 digitos.')
             if not cleaned_data.get('cliente_nombre'):
                 self.add_error('cliente_nombre', 'Ingresa la razon social para emitir factura.')
 

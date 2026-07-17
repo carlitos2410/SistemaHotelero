@@ -3,13 +3,40 @@ from .models import (
     CargoEstancia,
     Comprobante,
     ConfiguracionCobro,
+    CorrelativoComprobante,
     Estancia,
     Folio,
     MetodoPago,
     MovimientoCaja,
     Pago,
+    ProrrogaEstancia,
     ProductoServicio,
 )
+
+
+class RegistroFinancieroSoloLecturaAdmin:
+    """Los registros operativos se generan desde servicios transaccionales."""
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CorrelativoComprobante)
+class CorrelativoComprobanteAdmin(RegistroFinancieroSoloLecturaAdmin, admin.ModelAdmin):
+    list_display = ('tipo', 'serie', 'ultimo_numero')
+
+
+@admin.register(ProrrogaEstancia)
+class ProrrogaEstanciaAdmin(RegistroFinancieroSoloLecturaAdmin, admin.ModelAdmin):
+    list_display = ('estancia', 'fecha_salida_anterior', 'fecha_salida_nueva', 'noches_adicionales', 'monto', 'autorizado_por', 'creado_en')
+    list_filter = ('fecha_salida_nueva', 'creado_en')
+    search_fields = ('estancia__reserva__huesped__nombres', 'estancia__reserva__huesped__apellidos', 'motivo')
 
 
 @admin.register(ProductoServicio)
@@ -21,12 +48,30 @@ class ProductoServicioAdmin(admin.ModelAdmin):
 
 @admin.register(ConfiguracionCobro)
 class ConfiguracionCobroAdmin(admin.ModelAdmin):
-    list_display = ('politica_checkout', 'porcentaje_penalidad_salida_anticipada', 'activo', 'actualizado_en')
-    list_filter = ('politica_checkout', 'activo')
+    list_display = (
+        'politica_checkout',
+        'porcentaje_garantia_reserva',
+        'horas_plazo_pago_garantia',
+        'porcentaje_igv',
+        'porcentaje_early_checkin',
+        'porcentaje_late_checkout',
+        'porcentaje_penalidad_salida_anticipada',
+        'horas_cancelacion_gratuita',
+        'porcentaje_retencion_cancelacion_tardia',
+        'actualizado_en',
+    )
+    list_filter = ('politica_checkout',)
+    readonly_fields = ('politica_checkout',)
+
+    def has_add_permission(self, request):
+        return not ConfiguracionCobro.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Estancia)
-class EstanciaAdmin(admin.ModelAdmin):
+class EstanciaAdmin(RegistroFinancieroSoloLecturaAdmin, admin.ModelAdmin):
     list_display = (
         'id',
         'reserva',
@@ -50,15 +95,15 @@ class EstanciaAdmin(admin.ModelAdmin):
 
 
 @admin.register(CargoEstancia)
-class CargoEstanciaAdmin(admin.ModelAdmin):
+class CargoEstanciaAdmin(RegistroFinancieroSoloLecturaAdmin, admin.ModelAdmin):
     list_display = ('id', 'estancia', 'concepto', 'cantidad', 'precio_unitario', 'monto', 'fecha', 'tipo', 'pagado')
     list_filter = ('tipo', 'pagado', 'fecha')
     search_fields = ('concepto',)
 
 
 @admin.register(Folio)
-class FolioAdmin(admin.ModelAdmin):
-    list_display = ('id', 'estancia', 'subtotal', 'igv', 'total', 'total_pagado', 'saldo_pendiente', 'estado')
+class FolioAdmin(RegistroFinancieroSoloLecturaAdmin, admin.ModelAdmin):
+    list_display = ('id', 'estancia', 'subtotal', 'porcentaje_igv', 'igv', 'total', 'total_pagado', 'saldo_pendiente', 'estado')
     list_filter = ('estado',)
 
 
@@ -70,21 +115,27 @@ class MetodoPagoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Pago)
-class PagoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'folio', 'metodo_pago', 'monto', 'numero_operacion', 'estado', 'usuario_responsable', 'creado_en')
+class PagoAdmin(RegistroFinancieroSoloLecturaAdmin, admin.ModelAdmin):
+    list_display = ('id', 'folio', 'reserva', 'metodo_pago', 'monto', 'numero_operacion', 'estado', 'usuario_responsable', 'creado_en')
     list_filter = ('estado', 'metodo_pago', 'creado_en')
-    search_fields = ('numero_operacion', 'folio__estancia__reserva__huesped__nombres', 'folio__estancia__reserva__huesped__apellidos')
+    search_fields = (
+        'numero_operacion',
+        'folio__estancia__reserva__huesped__nombres',
+        'folio__estancia__reserva__huesped__apellidos',
+        'reserva__huesped__nombres',
+        'reserva__huesped__apellidos',
+    )
 
 
 @admin.register(Comprobante)
-class ComprobanteAdmin(admin.ModelAdmin):
+class ComprobanteAdmin(RegistroFinancieroSoloLecturaAdmin, admin.ModelAdmin):
     list_display = ('correlativo', 'tipo', 'cliente_nombre', 'cliente_documento', 'estado', 'fecha_emision')
     list_filter = ('tipo', 'estado', 'fecha_emision')
     search_fields = ('serie', 'numero', 'cliente_documento', 'cliente_nombre')
 
 
 @admin.register(MovimientoCaja)
-class MovimientoCajaAdmin(admin.ModelAdmin):
+class MovimientoCajaAdmin(RegistroFinancieroSoloLecturaAdmin, admin.ModelAdmin):
     list_display = ('id', 'tipo', 'concepto', 'monto', 'metodo_pago', 'usuario_responsable', 'fecha')
     list_filter = ('tipo', 'concepto', 'metodo_pago', 'fecha')
     search_fields = ('numero_operacion', 'observacion')
