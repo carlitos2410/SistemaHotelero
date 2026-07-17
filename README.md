@@ -38,6 +38,32 @@ docker compose exec web python manage.py cargar_datos_hotel
 
 El comando de datos semilla requiere que exista al menos un hotel registrado. Crea tipos de habitacion, 60 habitaciones distribuidas en 6 pisos y productos/servicios frecuentes. Es idempotente: puede ejecutarse mas de una vez sin duplicar informacion.
 
+## Automatizacion operativa de reservas
+
+Simular garantias vencidas y no-show sin modificar datos:
+
+```powershell
+docker compose exec web python manage.py procesar_reservas_operativas --dry-run
+```
+
+Ejecutar una revision inmediata:
+
+```powershell
+docker compose exec web python manage.py procesar_reservas_operativas
+```
+
+Mantener la automatizacion activa en otra terminal, revisando cada cinco minutos:
+
+```powershell
+docker compose exec web python manage.py procesar_reservas_operativas --continuo --intervalo 300
+```
+
+El comando es idempotente: una reserva ya cancelada o marcada como no-show no vuelve a procesarse. Los eventos de reservas, habitaciones, adelantos, cargos y pagos se escriben en la salida de Docker sin incluir contrasenas, documentos ni datos personales. Pueden consultarse con:
+
+```powershell
+docker compose logs -f web
+```
+
 ## Base de datos
 
 El proyecto esta configurado para PostgreSQL usando Docker Compose. La base local `db.sqlite3` no forma parte de la entrega final.

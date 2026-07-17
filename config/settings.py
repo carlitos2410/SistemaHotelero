@@ -10,8 +10,26 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
+
+
+def env_bool(nombre, default=False):
+    valor = os.getenv(nombre)
+    if valor is None:
+        return default
+    return valor.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def env_list(nombre, default=None):
+    valor = os.getenv(nombre)
+    if valor is None:
+        return list(default or [])
+    return [item.strip() for item in valor.split(',') if item.strip()]
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -19,13 +37,44 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-sistema-hotelero-dev-key-change-in-production-2026')
+DJANGO_ENV = os.getenv('DJANGO_ENV', 'development').strip().lower()
+IS_PRODUCTION = DJANGO_ENV == 'production'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', '1') == '1'
+# Desarrollo local conserva valores seguros y prácticos. Producción exige que
+# el secreto y los hosts sean proporcionados explícitamente por el entorno.
+DEBUG = env_bool('DEBUG', default=not IS_PRODUCTION)
+SECRET_KEY = os.getenv('SECRET_KEY', '').strip()
+if not SECRET_KEY:
+    if IS_PRODUCTION or not DEBUG:
+        raise ImproperlyConfigured('Define SECRET_KEY para ejecutar el sistema fuera de desarrollo.')
+    SECRET_KEY = 'local-only-hotel-2026-change-before-production-7f3a9c2e1b8d6f4a'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = env_list(
+    'ALLOWED_HOSTS',
+    default=['localhost', '127.0.0.1', '[::1]', 'testserver'],
+)
+if IS_PRODUCTION and not os.getenv('ALLOWED_HOSTS', '').strip():
+    raise ImproperlyConfigured('Define ALLOWED_HOSTS para el dominio de producción.')
+
+CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS')
+
+# Controles HTTP. En producción se activan de forma predeterminada; en local
+# permanecen desactivados porque localhost se sirve sin certificado TLS.
+SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', default=IS_PRODUCTION)
+SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', default=IS_PRODUCTION)
+CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', default=IS_PRODUCTION)
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000' if IS_PRODUCTION else '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=IS_PRODUCTION)
+SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', default=False)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+X_FRAME_OPTIONS = 'DENY'
+
+if env_bool('USE_X_FORWARDED_PROTO'):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -36,6 +85,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.postgres',
     'django.contrib.staticfiles',
 
     'rest_framework',
@@ -135,9 +185,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
-
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -155,4 +204,33 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API REST para disponibilidad, reservas, check-in, check-out, folios, housekeeping y reportes.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'hotel': {
+            'format': '{asctime} {levelname} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console_hotel': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'hotel',
+        },
+    },
+    'loggers': {
+        'hotel.operaciones': {
+            'handlers': ['console_hotel'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console_hotel'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
 }
