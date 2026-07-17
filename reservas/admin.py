@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Huesped, Promocion, Reserva, Tarifa
+from .models import Huesped, Promocion, Reserva, ReservaEstadoHistorial, Tarifa
 
 
 @admin.register(Huesped)
@@ -27,3 +27,31 @@ class ReservaAdmin(admin.ModelAdmin):
     list_display = ('id', 'hotel', 'huesped', 'habitacion', 'fecha_entrada', 'fecha_salida', 'estado', 'precio_total')
     list_filter = ('estado', 'hotel', 'fecha_entrada', 'fecha_salida')
     search_fields = ('huesped__nombres', 'huesped__apellidos')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ReservaEstadoHistorial)
+class ReservaEstadoHistorialAdmin(admin.ModelAdmin):
+    list_display = ('reserva', 'estado_anterior', 'estado_nuevo', 'cambiado_por', 'cambiado_en')
+    list_filter = ('estado_nuevo', 'cambiado_en')
+    search_fields = ('reserva__id', 'reserva__huesped__nombres', 'reserva__huesped__apellidos', 'motivo')
+    readonly_fields = (
+        'reserva', 'estado_anterior', 'estado_nuevo', 'cambiado_por', 'motivo', 'cambiado_en',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

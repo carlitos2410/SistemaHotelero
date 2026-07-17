@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import formset_factory
 from django.utils import timezone
-from .models import Acompanante, Reserva, Huesped
+from .models import Acompanante, Huesped, Promocion, Reserva
 from habitaciones.models import Habitacion
 
 
@@ -19,23 +19,27 @@ class HuespedForm(forms.ModelForm):
             'nacionalidad': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
-    def clean_num_doc(self):
-        return self.cleaned_data['num_doc']
-
     def validate_unique(self):
         pass
 
 
 class ReservaForm(forms.ModelForm):
+    promocion = forms.ModelChoiceField(
+        queryset=Promocion.objects.none(),
+        required=False,
+        empty_label='Aplicar mejor promoción automáticamente',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Promoción',
+    )
+
     class Meta:
         model = Reserva
-        fields = ['habitacion', 'fecha_entrada', 'fecha_salida', 'num_adultos', 'estado', 'origen']
+        fields = ['habitacion', 'fecha_entrada', 'fecha_salida', 'num_adultos', 'origen']
         widgets = {
             'habitacion': forms.HiddenInput(),
-            'fecha_entrada': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'readonly': 'readonly'}),
-            'fecha_salida': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'readonly': 'readonly'}),
+            'fecha_entrada': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'fecha_salida': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'num_adultos': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
-            'estado': forms.Select(attrs={'class': 'form-select'}),
             'origen': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
@@ -46,6 +50,9 @@ class ReservaForm(forms.ModelForm):
         hoy = timezone.localdate().strftime('%Y-%m-%d')
         self.fields['fecha_entrada'].widget.attrs['min'] = hoy
         self.fields['fecha_salida'].widget.attrs['min'] = hoy
+        self.fields['promocion'].queryset = Promocion.objects.filter(activo=True).order_by(
+            '-porcentaje_descuento', 'nombre'
+        )
 
         if habitacion_id:
             self.fields['habitacion'].queryset = Habitacion.objects.filter(id=habitacion_id)
@@ -58,6 +65,7 @@ class ReservaForm(forms.ModelForm):
         fecha_salida = cleaned_data.get('fecha_salida')
         habitacion = cleaned_data.get('habitacion')
         num_adultos = cleaned_data.get('num_adultos')
+        promocion = cleaned_data.get('promocion')
 
         hoy = timezone.localdate()
 
@@ -76,7 +84,33 @@ class ReservaForm(forms.ModelForm):
                 f'La habitacion permite maximo {habitacion.tipo.capacidad} persona(s).'
             )
 
+        if habitacion and fecha_entrada and fecha_salida and fecha_salida > fecha_entrada and promocion:
+            from .services import calcular_tarifa_estadia
+            try:
+                calcular_tarifa_estadia(
+                    habitacion.tipo, fecha_entrada, fecha_salida, promocion_id=promocion.id
+                )
+            except forms.ValidationError as exc:
+                self.add_error('promocion', exc.messages[0])
+
         return cleaned_data
+
+
+class CancelarReservaForm(forms.Form):
+    motivo = forms.CharField(
+        min_length=5,
+        max_length=250,
+        label='Motivo de cancelacion',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Explica el motivo informado por el huesped.',
+        }),
+    )
+    confirmar = forms.BooleanField(
+        label='Confirmo que revise el monto a devolver o retener.',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
 
 
 class ReservaFiltroForm(forms.Form):
@@ -149,6 +183,12 @@ class CheckinDirectoForm(forms.Form):
         initial=1,
         widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '1'})
     )
+    promocion = forms.ModelChoiceField(
+        queryset=Promocion.objects.none(),
+        required=False,
+        empty_label='Aplicar mejor promoción automáticamente',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
     origen = forms.CharField(
         required=False,
         initial='Walk-in',
@@ -162,6 +202,9 @@ class CheckinDirectoForm(forms.Form):
         self.fields['habitacion'].queryset = Habitacion.objects.select_related('hotel', 'tipo').filter(
             estado='DISPONIBLE'
         ).order_by('piso', 'numero')
+        self.fields['promocion'].queryset = Promocion.objects.filter(activo=True).order_by(
+            '-porcentaje_descuento', 'nombre'
+        )
 
     def clean_fecha_salida(self):
         fecha_salida = self.cleaned_data['fecha_salida']
@@ -176,12 +219,25 @@ class CheckinDirectoForm(forms.Form):
         cleaned_data = super().clean()
         habitacion = cleaned_data.get('habitacion')
         num_adultos = cleaned_data.get('num_adultos')
+        promocion = cleaned_data.get('promocion')
 
         if habitacion and num_adultos and num_adultos > habitacion.tipo.capacidad:
             self.add_error(
                 'num_adultos',
                 f'La habitacion permite maximo {habitacion.tipo.capacidad} persona(s).'
             )
+
+        if habitacion and cleaned_data.get('fecha_salida') and promocion:
+            from .services import calcular_tarifa_estadia
+            try:
+                calcular_tarifa_estadia(
+                    habitacion.tipo,
+                    timezone.localdate(),
+                    cleaned_data['fecha_salida'],
+                    promocion_id=promocion.id,
+                )
+            except forms.ValidationError as exc:
+                self.add_error('promocion', exc.messages[0])
 
         return cleaned_data
 
