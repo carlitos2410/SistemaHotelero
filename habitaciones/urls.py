@@ -1,3 +1,7 @@
-"""Rutas de habitaciones pendientes de implementación."""
+from django.urls import path
 
-urlpatterns = []
+from . import views
+
+urlpatterns = [
+    path('', views.lista_habitaciones, name='lista_habitaciones'),
+]
