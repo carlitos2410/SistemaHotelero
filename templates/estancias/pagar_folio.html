@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pagar folio | Sistema Hotelero{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/estancias.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/operaciones.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-hero page-hero--stack">
+    <h1 class="hotel-display">Caja</h1>
+    <p class="page-hero__subtitle">Registro de pagos parciales o totales con comprobante y movimiento de caja.</p>
+    <div class="page-hero__actions">
+        <a href="{% url 'historial_pagos' %}" class="btn btn-outline-dark btn-sm">Historial de pagos</a>
+        <a href="{% url 'reporte_caja_diario' %}" class="btn btn-outline-dark btn-sm">Reporte diario</a>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card-resumen p-4 mb-4">
+            <h2 class="h5">Folio #{{ folio.id }}</h2>
+            <p class="mb-1"><strong>Habitacion:</strong> {{ folio.estancia.habitacion.numero }}</p>
+            <p class="mb-1"><strong>Huesped:</strong> {{ folio.estancia.reserva.huesped.nombres }} {{ folio.estancia.reserva.huesped.apellidos }}</p>
+            {% if folio.estancia.reserva.descuento_promocion > 0 %}
+            <p class="mb-1"><strong>Tarifa original:</strong> S/ {{ folio.estancia.reserva.precio_sin_descuento }}</p>
+            <p class="mb-1 text-success"><strong>Promoción:</strong> - S/ {{ folio.estancia.reserva.descuento_promocion }}</p>
+            {% endif %}
+            <p class="mb-1"><strong>Valor de venta:</strong> S/ {{ folio.subtotal }}</p>
+            <p class="mb-1"><strong>IGV incluido:</strong> S/ {{ folio.igv }}</p>
+            <p class="mb-1"><strong>Total (IGV incluido):</strong> S/ {{ folio.total }}</p>
+            <p class="mb-1"><strong>Pagado:</strong> S/ {{ folio.total_pagado }}</p>
+            <p class="mb-3"><strong>Saldo:</strong> S/ {{ folio.saldo_pendiente }}</p>
+            <span class="badge {% if folio.estado == 'PAGADO' %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ folio.estado }}</span>
+            {% if folio.estancia.estado == 'ACTIVA' %}
+            <div class="d-grid gap-2 mt-3">
+                <a href="{% url 'cargar_consumo' folio.estancia.id %}" class="btn btn-outline-dark btn-sm">Agregar cargo o consumo</a>
+                <a href="{% url 'realizar_checkout' folio.estancia.reserva.id %}" class="btn btn-dark btn-sm">Ir al checkout</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card-resumen p-4">
+            <h2 class="h5">Registrar pago</h2>
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <div>{{ field.label }}: {{ error }}</div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% if folio.saldo_pendiente > 0 %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Metodo</label>
+                        {{ form.metodo_pago }}
+                        {{ form.metodo_pago.errors }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto</label>
+                        {{ form.monto }}
+                        {{ form.monto.errors }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de comprobante</label>
+                        {{ form.tipo_comprobante }}
+                        {{ form.tipo_comprobante.errors }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Documento cliente</label>
+                        {{ form.cliente_documento }}
+                        {{ form.cliente_documento.errors }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre / razon social</label>
+                        {{ form.cliente_nombre }}
+                        {{ form.cliente_nombre.errors }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Direccion</label>
+                        {{ form.cliente_direccion }}
+                        {{ form.cliente_direccion.errors }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Numero de operacion</label>
+                        {{ form.numero_operacion }}
+                        {{ form.numero_operacion.errors }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observacion</label>
+                        {{ form.observacion }}
+                        {{ form.observacion.errors }}
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">Registrar pago y emitir comprobante</button>
+                </form>
+            {% else %}
+                <div class="alert alert-success">Folio pagado completamente.</div>
+                {% if folio.estancia.estado == 'ACTIVA' %}
+                    <a href="{% url 'realizar_checkout' folio.estancia.reserva.id %}" class="btn btn-dark w-100">Volver a finalizar check-out</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card-resumen p-0 mb-4">
+            <div class="p-3 border-bottom"><h2 class="h5 mb-0">Detalle de cargos</h2></div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Tipo</th>
+                            <th>Cant.</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Habitacion / estadia{% if folio.estancia.reserva.descuento_promocion > 0 %} antes de promoción{% endif %}</td>
+                            <td>HABITACION</td>
+                            <td>1</td>
+                            <td>S/ {% if folio.estancia.reserva.descuento_promocion > 0 %}{{ folio.estancia.reserva.precio_sin_descuento }}{% else %}{{ folio.estancia.precio_final }}{% endif %}</td>
+                        </tr>
+                        {% if folio.estancia.reserva.descuento_promocion > 0 %}
+                        <tr class="text-success">
+                            <td>Promoción aplicada</td>
+                            <td>DESCUENTO</td>
+                            <td>1</td>
+                            <td>- S/ {{ folio.estancia.reserva.descuento_promocion }}</td>
+                        </tr>
+                        {% endif %}
+                        {% for cargo in cargos %}
+                        <tr>
+                            <td>{{ cargo.concepto }}</td>
+                            <td>{{ cargo.tipo }}</td>
+                            <td>{{ cargo.cantidad }}</td>
+                            <td>S/ {{ cargo.monto }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">Sin consumos adicionales.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-resumen p-0">
+            <div class="p-3 border-bottom"><h2 class="h5 mb-0">Pagos registrados</h2></div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Metodo</th>
+                            <th>Operacion</th>
+                            <th>Comprobante</th>
+                            <th>Estado</th>
+                            <th>Monto</th>
+                            <th>Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pago in pagos %}
+                        <tr>
+                            <td>{{ pago.creado_en|date:"d/m/Y H:i" }}</td>
+                            <td>{{ pago.metodo_pago.nombre }}</td>
+                            <td>{% if pago.numero_operacion %}{{ pago.numero_operacion }}{% else %}Efectivo{% endif %}</td>
+                            <td>
+                                {% if pago.comprobante %}
+                                    {{ pago.comprobante.get_tipo_display }} {{ pago.comprobante.correlativo }}
+                                {% else %}
+                                    Sin comprobante
+                                {% endif %}
+                            </td>
+                            <td>{{ pago.estado }}</td>
+                            <td>S/ {{ pago.monto }}</td>
+                            <td>
+                                {% if pago.estado == 'APROBADO' and pago.comprobante %}
+                                    <a href="{% url 'exportar_comprobante' pago.comprobante.id %}" class="btn btn-sm btn-outline-dark">PDF</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">No hay pagos registrados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
