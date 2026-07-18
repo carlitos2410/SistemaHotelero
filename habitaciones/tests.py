@@ -60,3 +60,66 @@ class TipoHabitacionTests(TestCase):
         TipoHabitacion.objects.create(nombre='Aaa', capacidad=1, precio_base=Decimal('50.00'))
         tipos = list(TipoHabitacion.objects.values_list('nombre', flat=True))
         self.assertEqual(tipos, ['Aaa', 'Doble', 'Zzz'])
+
+
+class HabitacionTests(TestCase):
+    def setUp(self):
+        self.hotel = Hotel.objects.create(
+            nombre='Hotel Test',
+            ruc='20123456789',
+            direccion='Direccion test',
+            estrellas=3,
+            telefono='999999999',
+        )
+        self.tipo = TipoHabitacion.objects.create(
+            nombre='Doble',
+            capacidad=2,
+            precio_base=Decimal('120.00'),
+        )
+
+    def test_crea_habitacion_disponible_por_defecto(self):
+        habitacion = Habitacion.objects.create(
+            hotel=self.hotel,
+            tipo=self.tipo,
+            numero='101',
+            piso=1,
+        )
+        self.assertEqual(habitacion.estado, 'DISPONIBLE')
+        self.assertEqual(str(habitacion), '101 - Hotel Test')
+
+    def test_numero_duplicado_en_mismo_hotel_rechaza(self):
+        Habitacion.objects.create(
+            hotel=self.hotel, tipo=self.tipo, numero='101', piso=1,
+        )
+        from django.db import IntegrityError
+        with self.assertRaises(IntegrityError):
+            with self.atomic():
+                Habitacion.objects.create(
+                    hotel=self.hotel, tipo=self.tipo, numero='101', piso=2,
+                )
+
+    def test_numero_igual_en_otro_hotel_permite(self):
+        Habitacion.objects.create(
+            hotel=self.hotel, tipo=self.tipo, numero='101', piso=1,
+        )
+        otro_hotel = Hotel.objects.create(
+            nombre='Otro Hotel', ruc='20987654321',
+            direccion='Otra', estrellas=4, telefono='888888888',
+        )
+        otra = Habitacion.objects.create(
+            hotel=otro_hotel, tipo=self.tipo, numero='101', piso=1,
+        )
+        self.assertIsNotNone(otra.pk)
+
+    def test_piso_negativo_rechaza(self):
+        habitacion = Habitacion(
+            hotel=self.hotel, tipo=self.tipo, numero='999', piso=-1,
+        )
+        with self.assertRaises(ValidationError):
+            habitacion.full_clean()
+
+    def test_orden_por_piso_y_numero(self):
+        Habitacion.objects.create(hotel=self.hotel, tipo=self.tipo, numero='201', piso=2)
+        Habitacion.objects.create(hotel=self.hotel, tipo=self.tipo, numero='101', piso=1)
+        nums = list(Habitacion.objects.values_list('numero', flat=True))
+        self.assertEqual(nums, ['101', '201'])
