@@ -180,3 +180,42 @@ class HabitacionEstadoHistorialTests(TestCase):
         h = HabitacionEstadoHistorial.objects.first()
         self.assertIn('501', str(h))
         self.assertIn('MANTENIMIENTO', str(h))
+
+
+class ObservacionMantenimientoTests(TestCase):
+    def setUp(self):
+        self.hotel = Hotel.objects.create(
+            nombre='Hotel Mant', ruc='20222222222',
+            direccion='Dir', estrellas=3, telefono='777777777',
+        )
+        self.tipo = TipoHabitacion.objects.create(
+            nombre='Simple', capacidad=1, precio_base=Decimal('80.00'),
+        )
+        self.habitacion = Habitacion.objects.create(
+            hotel=self.hotel, tipo=self.tipo, numero='101', piso=1,
+        )
+
+    def test_crea_observacion(self):
+        obs = ObservacionMantenimiento.objects.create(
+            habitacion=self.habitacion,
+            observacion='Falla en el aire acondicionado.',
+        )
+        self.assertIn('101', str(obs))
+        self.assertEqual(obs.observacion, 'Falla en el aire acondicionado.')
+
+    def test_orden_por_mas_reciente(self):
+        ObservacionMantenimiento.objects.create(
+            habitacion=self.habitacion, observacion='Primera',
+        )
+        ObservacionMantenimiento.objects.create(
+            habitacion=self.habitacion, observacion='Segunda',
+        )
+        observaciones = list(ObservacionMantenimiento.objects.values_list('observacion', flat=True))
+        self.assertEqual(observaciones, ['Segunda', 'Primera'])
+
+    def test_habitacion_eliminada_cascade(self):
+        ObservacionMantenimiento.objects.create(
+            habitacion=self.habitacion, observacion='Test',
+        )
+        self.habitacion.delete()
+        self.assertEqual(ObservacionMantenimiento.objects.count(), 0)
