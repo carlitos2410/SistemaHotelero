@@ -28,6 +28,14 @@ class TipoHabitacion(models.Model):
 
 
 class Habitacion(models.Model):
+    ESTADOS = [
+        ('DISPONIBLE', 'Disponible'),
+        ('RESERVADA', 'Reservada'),
+        ('OCUPADA', 'Ocupada'),
+        ('LIMPIEZA', 'En limpieza'),
+        ('MANTENIMIENTO', 'En mantenimiento'),
+    ]
+
     hotel = models.ForeignKey(
         Hotel,
         on_delete=models.CASCADE,
@@ -40,6 +48,11 @@ class Habitacion(models.Model):
     )
     numero = models.CharField(max_length=10)
     piso = models.PositiveIntegerField()
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADOS,
+        default='DISPONIBLE',
+    )
 
     def __str__(self):
         return f'{self.numero} - {self.hotel.nombre}'
