@@ -11,6 +11,8 @@ class TipoHabitacion(models.Model):
     amenidades = models.JSONField(default=dict, blank=True)
 
     class Meta:
+        verbose_name = 'tipo de habitacion'
+        verbose_name_plural = 'tipos de habitacion'
         ordering = ['nombre']
 
     def __str__(self):
@@ -55,6 +57,8 @@ class Habitacion(models.Model):
     )
 
     class Meta:
+        verbose_name = 'habitacion'
+        verbose_name_plural = 'habitaciones'
         ordering = ['piso', 'numero']
         constraints = [
             models.UniqueConstraint(
@@ -93,6 +97,8 @@ class HabitacionEstadoHistorial(models.Model):
     cambiado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = 'historial de estado'
+        verbose_name_plural = 'historial de estados'
         ordering = ['-cambiado_en', '-id']
 
     def __str__(self):
@@ -109,6 +115,8 @@ class ObservacionMantenimiento(models.Model):
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = 'observacion de mantenimiento'
+        verbose_name_plural = 'observaciones de mantenimiento'
         ordering = ['-creado_en', '-pk']
 
     def __str__(self):
