@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reporte de caja | Sistema Hotelero{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/estancias.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-hero page-hero--stack">
+    <h1 class="hotel-display">Reporte de caja</h1>
+    <p class="page-hero__subtitle">Movimientos de caja diarios con filtros por fecha, metodo, comprobante y estado.</p>
+</div>
+
+<form method="get" class="card-resumen p-3 mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-2">{{ form.fecha_desde.label_tag }}{{ form.fecha_desde }}</div>
+        <div class="col-md-2">{{ form.fecha_hasta.label_tag }}{{ form.fecha_hasta }}</div>
+        <div class="col-md-2">{{ form.metodo_pago.label_tag }}{{ form.metodo_pago }}</div>
+        <div class="col-md-2">{{ form.tipo_comprobante.label_tag }}{{ form.tipo_comprobante }}</div>
+        <div class="col-md-2">{{ form.estado.label_tag }}{{ form.estado }}</div>
+        <div class="col-md-2"><button type="submit" class="btn btn-dark w-100">Filtrar</button></div>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Ingresos</small><h3>S/ {{ ingresos }}</h3></div></div>
+    <div class="col-md-4"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Egresos</small><h3>S/ {{ egresos }}</h3></div></div>
+    <div class="col-md-4"><div class="card-resumen p-3"><small class="text-muted text-uppercase">Saldo</small><h3>S/ {{ saldo }}</h3></div></div>
+</div>
+
+<div class="card-resumen p-0">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Concepto</th>
+                    <th>Cliente</th>
+                    <th>Metodo</th>
+                    <th>Operacion</th>
+                    <th>Comprobante</th>
+                    <th>Usuario</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movimiento in movimientos %}
+                <tr>
+                    <td>{{ movimiento.fecha|date:"d/m/Y H:i" }}</td>
+                    <td>{{ movimiento.get_tipo_display }}</td>
+                    <td>{{ movimiento.get_concepto_display }}</td>
+                    <td>
+                        {% if movimiento.pago %}
+                            {% if movimiento.pago.folio %}{{ movimiento.pago.folio.estancia.reserva.huesped.nombres }} {{ movimiento.pago.folio.estancia.reserva.huesped.apellidos }}
+                            {% else %}{{ movimiento.pago.reserva.huesped.nombres }} {{ movimiento.pago.reserva.huesped.apellidos }}{% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ movimiento.metodo_pago.nombre }}</td>
+                    <td>{{ movimiento.numero_operacion|default:"Efectivo" }}</td>
+                    <td>
+                        {% if movimiento.pago.comprobante %}
+                            {{ movimiento.pago.comprobante.correlativo }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{% if movimiento.usuario_responsable %}{{ movimiento.usuario_responsable.username }}{% else %}-{% endif %}</td>
+                    <td>S/ {{ movimiento.monto }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="text-center text-muted py-4">No hay movimientos para los filtros seleccionados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'includes/paginacion.html' %}
+</div>
+{% endblock %}
