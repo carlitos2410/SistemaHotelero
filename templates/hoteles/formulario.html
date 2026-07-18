@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} - Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="page-header page-header-row">
+    <div>
+        <h1 class="display-6" style="font-family: 'Cormorant Garamond', serif;">{{ titulo }}</h1>
+    </div>
+    <div>
+        <a href="{% url 'hoteles_lista' %}" class="btn btn-outline-dark">Volver</a>
+    </div>
+</div>
+
+<div class="card-resumen p-4">
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+            <p class="mb-0">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre</label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.ruc.id_for_label }}" class="form-label">RUC</label>
+                {{ form.ruc }}
+                {% if form.ruc.errors %}<div class="text-danger small">{{ form.ruc.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-8">
+                <label for="{{ form.direccion.id_for_label }}" class="form-label">Direccion</label>
+                {{ form.direccion }}
+                {% if form.direccion.errors %}<div class="text-danger small">{{ form.direccion.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
+                <label for="{{ form.estrellas.id_for_label }}" class="form-label">Estrellas</label>
+                {{ form.estrellas }}
+                {% if form.estrellas.errors %}<div class="text-danger small">{{ form.estrellas.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.telefono.id_for_label }}" class="form-label">Telefono</label>
+                {{ form.telefono }}
+                {% if form.telefono.errors %}<div class="text-danger small">{{ form.telefono.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-12">
+                <div class="form-check">
+                    {{ form.activo }}
+                    <label class="form-check-label" for="{{ form.activo.id_for_label }}">Activo</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-dark">Guardar</button>
+            <a href="{% url 'hoteles_lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

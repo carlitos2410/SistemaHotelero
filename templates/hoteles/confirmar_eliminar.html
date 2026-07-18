@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar {{ hotel.nombre }} - Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="page-header page-header-row">
+    <div>
+        <h1 class="display-6" style="font-family: 'Cormorant Garamond', serif;">Eliminar hotel</h1>
+    </div>
+    <div>
+        <a href="{% url 'hoteles_lista' %}" class="btn btn-outline-dark">Volver</a>
+    </div>
+</div>
+
+<div class="card-resumen p-4">
+    <div class="alert alert-warning">
+        <h5>Confirmar eliminacion</h5>
+        <p class="mb-0">
+            Esta a punto de eliminar el hotel <strong>{{ hotel.nombre }}</strong> (RUC: {{ hotel.ruc }}).
+            Esta accion no se puede deshacer.
+        </p>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="detail-label">Nombre</div>
+            <div class="detail-value">{{ hotel.nombre }}</div>
+        </div>
+        <div class="col-md-4">
+            <div class="detail-label">RUC</div>
+            <div class="detail-value">{{ hotel.ruc }}</div>
+        </div>
+        <div class="col-md-4">
+            <div class="detail-label">Direccion</div>
+            <div class="detail-value">{{ hotel.direccion }}</div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger">Eliminar definitivamente</button>
+            <a href="{% url 'hoteles_lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
