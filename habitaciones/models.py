@@ -97,3 +97,19 @@ class HabitacionEstadoHistorial(models.Model):
 
     def __str__(self):
         return f'{self.habitacion}: {self.estado_anterior or "INICIAL"} -> {self.estado_nuevo}'
+
+
+class ObservacionMantenimiento(models.Model):
+    habitacion = models.ForeignKey(
+        Habitacion,
+        on_delete=models.CASCADE,
+        related_name='observaciones_mantenimiento',
+    )
+    observacion = models.TextField()
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-creado_en', '-pk']
+
+    def __str__(self):
+        return f'Observacion {self.habitacion} - {self.creado_en:%d/%m/%Y}'
