@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from hoteles.models import Hotel
+
 
 class TipoHabitacion(models.Model):
     nombre = models.CharField(max_length=80)
@@ -23,3 +25,21 @@ class TipoHabitacion(models.Model):
             errores['precio_base'] = 'El precio base debe ser mayor a cero.'
         if errores:
             raise ValidationError(errores)
+
+
+class Habitacion(models.Model):
+    hotel = models.ForeignKey(
+        Hotel,
+        on_delete=models.CASCADE,
+        related_name='habitaciones',
+    )
+    tipo = models.ForeignKey(
+        TipoHabitacion,
+        on_delete=models.PROTECT,
+        related_name='habitaciones',
+    )
+    numero = models.CharField(max_length=10)
+    piso = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f'{self.numero} - {self.hotel.nombre}'
