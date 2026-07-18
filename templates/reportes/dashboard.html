@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes - Sistema Hotelero{% endblock %}
+
+{% block content %}
+<div class="page-header page-header-row">
+    <div>
+        <h1 class="display-6" style="font-family: 'Cormorant Garamond', serif;">Reportes gerenciales</h1>
+        <p class="text-muted mb-0">Indicadores de ocupacion, ingresos y reservas</p>
+    </div>
+    <div>
+        <a href="{% url 'exportar_reporte_pdf' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-outline-dark">Exportar PDF</a>
+    </div>
+</div>
+
+<div class="card-resumen p-3 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label small">Desde</label>
+            {{ form.fecha_desde }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Hasta</label>
+            {{ form.fecha_hasta }}
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Hotel</label>
+            {{ form.hotel }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small">Tipo</label>
+            {{ form.tipo }}
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-outline-dark w-100">Filtrar</button>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'dashboard_reportes' %}" class="btn btn-outline-secondary w-100">Limpiar</a>
+        </div>
+    </form>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card-resumen p-3 text-center">
+            <small class="text-muted">Ocupacion promedio</small>
+            <h2 class="mb-0 mt-1">{{ ocupacion.porcentaje_ocupacion }}%</h2>
+            <small class="text-muted">{{ ocupacion.ocupadas_promedio }} de {{ ocupacion.total_habitaciones }} habitaciones</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-resumen p-3 text-center">
+            <small class="text-muted">Ingresos totales</small>
+            <h2 class="mb-0 mt-1">S/ {{ ingresos.total_pagos|floatformat:2 }}</h2>
+            <small class="text-muted">{{ ingresos.cantidad_pagos }} pagos registrados</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-resumen p-3 text-center">
+            <small class="text-muted">Reservas creadas</small>
+            <h2 class="mb-0 mt-1">{{ reservas.total|default:"0" }}</h2>
+            <small class="text-muted">Ingreso estimado S/ {{ reservas.ingreso_total|default:"0.00"|floatformat:2 }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-resumen p-3 text-center">
+            <small class="text-muted">Flujo neto caja</small>
+            <h2 class="mb-0 mt-1">S/ {{ ingresos.flujo_neto|floatformat:2 }}</h2>
+            <small class="text-muted">Ingresos - Egresos</small>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card-resumen p-4">
+            <h2 style="font-family: 'Cormorant Garamond', serif;">Distribucion de reservas</h2>
+            <div class="table-responsive mt-3">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Estado</th>
+                            <th class="text-end">Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge bg-warning text-dark">Pendientes</span></td>
+                            <td class="text-end">{{ reservas.pendientes|default:"0" }}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-info">Confirmadas</span></td>
+                            <td class="text-end">{{ reservas.confirmadas|default:"0" }}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-primary">En casa</span></td>
+                            <td class="text-end">{{ reservas.en_casa|default:"0" }}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-success">Finalizadas</span></td>
+                            <td class="text-end">{{ reservas.finalizadas|default:"0" }}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger">Canceladas</span></td>
+                            <td class="text-end">{{ reservas.canceladas|default:"0" }}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-secondary">No-show</span></td>
+                            <td class="text-end">{{ reservas.no_show|default:"0" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card-resumen p-4">
+            <h2 style="font-family: 'Cormorant Garamond', serif;">Estado de habitaciones</h2>
+            <div class="table-responsive mt-3">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Estado</th>
+                            <th class="text-end">Cantidad</th>
+                            <th class="text-end">Porcentaje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for estado, cantidad in habitaciones.items %}
+                        <tr>
+                            <td>{{ estado }}</td>
+                            <td class="text-end">{{ cantidad }}</td>
+                            <td class="text-end">{% widthratio cantidad total_habitaciones 100 %}%</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">No hay datos disponibles.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card-resumen p-4">
+            <h2 style="font-family: 'Cormorant Garamond', serif;">Resumen de caja</h2>
+            <div class="row g-3 mt-2">
+                <div class="col-6">
+                    <div class="detail-label">Ingresos</div>
+                    <div class="detail-value text-success">S/ {{ ingresos.ingresos_caja|floatformat:2 }}</div>
+                </div>
+                <div class="col-6">
+                    <div class="detail-label">Egresos</div>
+                    <div class="detail-value text-danger">S/ {{ ingresos.egresos_caja|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card-resumen p-4">
+            <h2 style="font-family: 'Cormorant Garamond', serif;">Periodo analizado</h2>
+            <div class="row g-3 mt-2">
+                <div class="col-6">
+                    <div class="detail-label">Desde</div>
+                    <div class="detail-value">{{ fecha_desde|date:"d/m/Y"|default:"Inicio de mes" }}</div>
+                </div>
+                <div class="col-6">
+                    <div class="detail-label">Hasta</div>
+                    <div class="detail-value">{{ fecha_hasta|date:"d/m/Y"|default:"Hoy" }}</div>
+                </div>
+                <div class="col-12">
+                    <div class="detail-label">Dias analizados</div>
+                    <div class="detail-value">{{ ocupacion.dias_analizados }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
