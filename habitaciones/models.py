@@ -65,3 +65,11 @@ class Habitacion(models.Model):
 
     def __str__(self):
         return f'{self.numero} - {self.hotel.nombre}'
+
+    def clean(self):
+        super().clean()
+        errores = {}
+        if self.piso is not None and self.piso < 1:
+            errores['piso'] = 'El piso debe ser mayor a cero.'
+        if errores:
+            raise ValidationError(errores)
