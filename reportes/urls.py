@@ -1,9 +1,3 @@
-from django.urls import path
+"""Rutas de reportes pendientes de implementación."""
 
-from . import views
-
-
-urlpatterns = [
-    path('', views.dashboard_reportes, name='dashboard_reportes'),
-    path('pdf/', views.exportar_reporte_pdf, name='exportar_reporte_pdf'),
-]
+urlpatterns = []
