@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -7,5 +8,18 @@ class TipoHabitacion(models.Model):
     precio_base = models.DecimalField(max_digits=10, decimal_places=2)
     amenidades = models.JSONField(default=dict, blank=True)
 
+    class Meta:
+        ordering = ['nombre']
+
     def __str__(self):
         return self.nombre
+
+    def clean(self):
+        super().clean()
+        errores = {}
+        if self.capacidad and self.capacidad < 1:
+            errores['capacidad'] = 'La capacidad debe ser al menos 1.'
+        if self.precio_base is not None and self.precio_base <= 0:
+            errores['precio_base'] = 'El precio base debe ser mayor a cero.'
+        if errores:
+            raise ValidationError(errores)
