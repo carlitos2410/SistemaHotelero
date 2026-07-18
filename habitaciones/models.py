@@ -73,3 +73,27 @@ class Habitacion(models.Model):
             errores['piso'] = 'El piso debe ser mayor a cero.'
         if errores:
             raise ValidationError(errores)
+
+
+class HabitacionEstadoHistorial(models.Model):
+    habitacion = models.ForeignKey(
+        Habitacion,
+        on_delete=models.CASCADE,
+        related_name='historial_estados',
+    )
+    estado_anterior = models.CharField(max_length=20, blank=True)
+    estado_nuevo = models.CharField(max_length=20)
+    motivo = models.CharField(max_length=250, blank=True)
+    cambiado_por = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    cambiado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-cambiado_en', '-id']
+
+    def __str__(self):
+        return f'{self.habitacion}: {self.estado_anterior or "INICIAL"} -> {self.estado_nuevo}'
