@@ -123,3 +123,60 @@ class HabitacionTests(TestCase):
         Habitacion.objects.create(hotel=self.hotel, tipo=self.tipo, numero='101', piso=1)
         nums = list(Habitacion.objects.values_list('numero', flat=True))
         self.assertEqual(nums, ['101', '201'])
+
+
+class HabitacionEstadoHistorialTests(TestCase):
+    def setUp(self):
+        self.usuario = User.objects.create_user(username='testuser', password='clave12345')
+        self.hotel = Hotel.objects.create(
+            nombre='Hotel Historial', ruc='20111111111',
+            direccion='Dir', estrellas=3, telefono='999999999',
+        )
+        self.tipo = TipoHabitacion.objects.create(
+            nombre='Suite', capacidad=2, precio_base=Decimal('200.00'),
+        )
+        self.habitacion = Habitacion.objects.create(
+            hotel=self.hotel, tipo=self.tipo, numero='501', piso=5,
+        )
+
+    def test_cambiar_estado_registra_historial(self):
+        cambiar_estado_habitacion(
+            self.habitacion, 'OCUPADA', usuario=self.usuario, motivo='Check-in.',
+        )
+        self.habitacion.refresh_from_db()
+        self.assertEqual(self.habitacion.estado, 'OCUPADA')
+        historial = HabitacionEstadoHistorial.objects.get(habitacion=self.habitacion)
+        self.assertEqual(historial.estado_anterior, 'DISPONIBLE')
+        self.assertEqual(historial.estado_nuevo, 'OCUPADA')
+        self.assertEqual(historial.motivo, 'Check-in.')
+        self.assertEqual(historial.cambiado_por, self.usuario)
+
+    def test_cambiar_al_mismo_estado_no_registra(self):
+        cambiar_estado_habitacion(self.habitacion, 'DISPONIBLE')
+        self.assertEqual(HabitacionEstadoHistorial.objects.count(), 0)
+
+    def test_estado_invalido_rechaza(self):
+        from django.core.exceptions import ValidationError
+        with self.assertRaises(ValidationError):
+            cambiar_estado_habitacion(self.habitacion, 'INVALIDO')
+
+    def test_cadena_cambios_registra_todos(self):
+        cambiar_estado_habitacion(self.habitacion, 'OCUPADA', usuario=self.usuario)
+        cambiar_estado_habitacion(self.habitacion, 'LIMPIEZA', usuario=self.usuario)
+        cambiar_estado_habitacion(self.habitacion, 'DISPONIBLE', usuario=self.usuario)
+        cambios = list(
+            HabitacionEstadoHistorial.objects.filter(habitacion=self.habitacion)
+            .order_by('cambiado_en')
+            .values_list('estado_anterior', 'estado_nuevo')
+        )
+        self.assertEqual(cambios, [
+            ('DISPONIBLE', 'OCUPADA'),
+            ('OCUPADA', 'LIMPIEZA'),
+            ('LIMPIEZA', 'DISPONIBLE'),
+        ])
+
+    def test_historial_str(self):
+        cambiar_estado_habitacion(self.habitacion, 'MANTENIMIENTO', motivo='Falla.')
+        h = HabitacionEstadoHistorial.objects.first()
+        self.assertIn('501', str(h))
+        self.assertIn('MANTENIMIENTO', str(h))
