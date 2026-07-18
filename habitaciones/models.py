@@ -54,5 +54,14 @@ class Habitacion(models.Model):
         default='DISPONIBLE',
     )
 
+    class Meta:
+        ordering = ['piso', 'numero']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['hotel', 'numero'],
+                name='habitacion_hotel_numero_unico',
+            ),
+        ]
+
     def __str__(self):
         return f'{self.numero} - {self.hotel.nombre}'
