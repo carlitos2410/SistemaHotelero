@@ -219,3 +219,43 @@ class ObservacionMantenimientoTests(TestCase):
         )
         self.habitacion.delete()
         self.assertEqual(ObservacionMantenimiento.objects.count(), 0)
+
+
+class CambiarEstadoHabitacionTests(TestCase):
+    def setUp(self):
+        self.usuario = User.objects.create_user(username='svc_user', password='clave12345')
+        self.hotel = Hotel.objects.create(
+            nombre='Hotel SVC', ruc='20333333333',
+            direccion='Dir', estrellas=3, telefono='666666666',
+        )
+        self.tipo = TipoHabitacion.objects.create(
+            nombre='Estandar', capacidad=2, precio_base=Decimal('100.00'),
+        )
+        self.habitacion = Habitacion.objects.create(
+            hotel=self.hotel, tipo=self.tipo, numero='201', piso=2,
+        )
+
+    def test_ocupar_habitacion(self):
+        h = cambiar_estado_habitacion(self.habitacion, 'OCUPADA', usuario=self.usuario, motivo='Check-in')
+        self.assertEqual(h.estado, 'OCUPADA')
+
+    def test_limpieza_despues_ocupada(self):
+        cambiar_estado_habitacion(self.habitacion, 'OCUPADA')
+        h = cambiar_estado_habitacion(self.habitacion, 'LIMPIEZA', motivo='Checkout')
+        self.assertEqual(h.estado, 'LIMPIEZA')
+
+    def test_volver_a_disponible(self):
+        cambiar_estado_habitacion(self.habitacion, 'OCUPADA')
+        cambiar_estado_habitacion(self.habitacion, 'LIMPIEZA')
+        h = cambiar_estado_habitacion(self.habitacion, 'DISPONIBLE', motivo='Limpieza completada')
+        self.assertEqual(h.estado, 'DISPONIBLE')
+
+    def test_mantenimiento_y_regreso(self):
+        cambiar_estado_habitacion(self.habitacion, 'MANTENIMIENTO', motivo='Falla electrica')
+        h = cambiar_estado_habitacion(self.habitacion, 'DISPONIBLE', motivo='Reparado')
+        self.assertEqual(h.estado, 'DISPONIBLE')
+        self.assertEqual(HabitacionEstadoHistorial.objects.filter(habitacion=self.habitacion).count(), 2)
+
+    def test_retorna_misma_instancia(self):
+        h = cambiar_estado_habitacion(self.habitacion, 'OCUPADA')
+        self.assertEqual(h.pk, self.habitacion.pk)
